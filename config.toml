@@ -1,0 +1,3 @@
+[dataset]
+preprocessed_uri = "s3://fcp-indi/data/Projects/ADHD200/Outputs/fmriprep/fmriprep/"
+description_uri = "s3://fcp-indi/data/Projects/ADHD200/RawDataBIDS/"
