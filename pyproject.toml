@@ -6,7 +6,10 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "boto3>=1.40.73",
+    "jupyter>=1.1.1",
+    "nilearn>=0.12.1",
     "pandas>=2.3.3",
+    "seaborn>=0.13.2",
     "tqdm>=4.67.1",
 ]
 
