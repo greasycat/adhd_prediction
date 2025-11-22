@@ -7,9 +7,7 @@ from pathlib import Path
 import sys
 from tqdm import tqdm
 import shutil
-
-from csv_validator import validate_subject_ids
-
+import argparse
 
 class S3Browser:
     def __init__(self, uri, region="us-east-1"):
@@ -107,16 +105,20 @@ def download_descriptions(description_uri, destination="data"):
 MNI_TAG = "_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-"
 
 
-def download_preprocessed_data(preprocessed_uri, destination="data"):
+def download_preprocessed_data(preprocessed_uri, image_destination="data/raw", info_destination="data"):
+
+    if not Path(image_destination).exists():
+        Path(image_destination).mkdir(parents=True, exist_ok=True)
+
     downloaded_ids = []
-    if Path("data/downloaded.txt").exists():
-        with open("data/downloaded.txt", "r") as f:
-            downloaded_ids = f.read().splitlines()
+    if Path(info_destination + "/downloaded.txt").exists():
+        with open(info_destination + "/downloaded.txt", "r") as f1:
+            downloaded_ids = f1.read().splitlines()
 
     s3 = S3Browser(preprocessed_uri)
     _, subject_dirs = s3.list_s3("")
     progress = tqdm(total=len(subject_dirs), desc="Subjects found")
-    with open("data/downloaded.txt", "a") as f:
+    with open(info_destination + "/downloaded.txt", "a") as f1, open(info_destination + "/failed.txt", "a") as f2:
         for dir in subject_dirs:
             if not dir.startswith("sub"):
                 continue
@@ -128,30 +130,78 @@ def download_preprocessed_data(preprocessed_uri, destination="data"):
                 continue
             mask_file = f"{id}/ses-1/func/{id}{MNI_TAG}brain_mask.nii.gz"
             image_file = f"{id}/ses-1/func/{id}{MNI_TAG}preproc_bold.nii.gz"
-            dest = f"data/{id}"
+            dest = f"{image_destination}/{id}"
 
             if Path(dest).exists():
                 shutil.rmtree(dest)
 
             try:
-                progress.set_description(f"Downloading {id} to data/{id}")
-                s3.download(mask_file, destination=f"data/{id}", overwrite_path=True)
-                s3.download(image_file, destination=f"data/{id}", overwrite_path=True)
-                f.write(f"{id}\n")
-                f.flush()
+                progress.set_description(f"Downloading {id} to {image_destination}/{id}")
+                s3.download(mask_file, destination=dest, overwrite_path=True)
+                s3.download(image_file, destination=dest, overwrite_path=True)
+                f1.write(f"{id}\n")
+                f1.flush()
                 progress.update(1)
             except Exception as e:
+                shutil.rmtree(dest)
                 print(f"Error downloading data for subject {id}: {e}")
+                f2.write(f"{id}\n")
+                f2.flush()
                 progress.update(1)
                 continue
 
-    #        -MNI152NLin2009cAsym_desc-brain_mask.nii.gz
-    # sub-0010001_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-preproc_bold.nii.gz
 
-    validate_subject_ids("data", [dir.strip("/") for dir in subject_dirs])
+def ls_folder(s3, folder):
+    files, folders = s3.list_s3(folder)
+    for f in files + folders:
+        print(" - " + f)
 
+
+def check_failed_downloads(preprocessed_uri):
+    failed_ids = []
+    with open("data/failed.txt", "r") as f:
+        failed_ids = f.read().splitlines()
+
+    s3 = S3Browser(preprocessed_uri)
+    for id in failed_ids:
+        print(f"\n\nChecking {id}:")
+        ls_folder(s3, f"{id}/")
+        ls_folder(s3, f"{id}/ses-1/")
+        ls_folder(s3, f"{id}/ses-1/func/")
+        s = input("q to quit, anything else to continue: ")
+        if s.lower() == "q":
+            break
+
+def interactive_browser(s3: S3Browser):
+    path_stack = [""]
+    while True:
+        files, folders = s3.list_s3(path_stack[-1])
+        for f in files:
+            print(f" - {f}")
+        for i, f in enumerate(folders):
+            print(f" {i+1}. {f}")
+
+        s = input("Enter a number to select a file or folder, 'b' to go back, or 'q' to quit: ")
+        if s.lower() == "q":
+            break
+        elif s.lower() == "b" and len(path_stack) > 1:
+            print(f"Going back to {path_stack[-2]}")
+            path_stack.pop()
+            continue
+        elif s.isdigit():
+            s = int(s)
+            if s > 0 and s <= len(folders):
+                path_stack.append(folders[s-1])
+            else:
+                print("Invalid input")
+        
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "--interactive", action="store_true")
+    args = parser.parse_args()
+
+
     with open("config.toml", "rb") as toml_file:
         toml_config = tomllib.load(toml_file)
         dataset_config = toml_config["dataset"]
@@ -164,8 +214,12 @@ def main():
     if description_uri is None:
         raise ValueError("S3 URI not found in config.toml under [dataset] section.")
 
+    if args.interactive:
+        interactive_browser(S3Browser(preprocessed_uri))
+        return
+
     download_descriptions(description_uri, destination="data")
-    download_preprocessed_data(preprocessed_uri, destination="data")
+    download_preprocessed_data(preprocessed_uri, image_destination="data/raw", info_destination="data")
 
 
 if __name__ == "__main__":
