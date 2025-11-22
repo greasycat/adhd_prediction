@@ -26,7 +26,18 @@ class SubjectDataset:
         return path
     
     def get_label(self, id):
-        return self.label_df[self.label_df["id"] == id]["label"].values[0]
+        return self.label_df[self.label_df["id"] == id]["label"].values[0] # type: ignore
+    
+    def get_all_ids(self):
+        return self.label_df["id"].tolist()
+    
+    def get_images(self):
+        return [self.get_image_path(id) for id in self.get_all_ids()]
+    
+    def enumerate_subjects(self):
+        for id in self.get_all_ids():
+            yield id, self.get_image_path(id), self.get_mask_path(id)
+
     
 
 if __name__ == "__main__":
