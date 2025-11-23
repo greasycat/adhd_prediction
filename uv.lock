@@ -15,6 +15,7 @@ dependencies = [
     { name = "jupyter" },
     { name = "nilearn" },
     { name = "pandas" },
+    { name = "scikit-learn" },
     { name = "seaborn" },
     { name = "tqdm" },
 ]
@@ -25,6 +26,7 @@ requires-dist = [
     { name = "jupyter", specifier = ">=1.1.1" },
     { name = "nilearn", specifier = ">=0.12.1" },
     { name = "pandas", specifier = ">=2.3.3" },
+    { name = "scikit-learn", specifier = ">=1.7.2" },
     { name = "seaborn", specifier = ">=0.13.2" },
     { name = "tqdm", specifier = ">=4.67.1" },
 ]

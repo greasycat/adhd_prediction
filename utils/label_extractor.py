@@ -1,6 +1,18 @@
-import argparse
+import tomllib
 import pandas as pd
 from pathlib import Path
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+SITES = {
+    "PEKING": 1,
+    "BROWN": 2,
+    "KKI": 3,
+    "NEURO": 4,
+    "NYU": 5,
+    "OHSU": 6,
+    "PITT": 7,
+}
 
 def merge_phenotypic_data(output_dir="data", processed_dir="data/processed"):
     phenotypic_files = [x for x in Path(output_dir).glob("*.csv")]
@@ -19,29 +31,38 @@ def merge_phenotypic_data(output_dir="data", processed_dir="data/processed"):
     final_df.to_csv(processed_dir + "/all_phenotypic.csv", index=False)
     return final_df
 
-def plot_label_distribution(df, downloaded_id, output_dir="data", site="NYU"):
-    import seaborn as sns
-    import matplotlib.pyplot as plt
+def plot_label_distribution(df, downloaded_id, plot_dir="data/plots", site="NYU"):
+
+    if not Path(plot_dir).exists():
+        Path(plot_dir).mkdir(parents=True, exist_ok=True)
+
     sns.countplot(x="DX", data=df[df["ScanDir ID"].isin(downloaded_id)])
-    plt.savefig(output_dir + f"/{site}_label_distribution.png")
+    plt.title(f"{site} label distribution")
+    plt.savefig(plot_dir + f"/{site}_label_distribution.png")
+    plt.close()
+
+def extract_label(df,downloaded_id, output_dir="data", site="NYU", site_id=5, plot_dir="data/plots"):
+    df = df[df["Site"] == site_id]
+    df[df["ScanDir ID"].isin(downloaded_id)][["ScanDir ID", "DX"]].rename(columns={"ScanDir ID": "id", "DX": "label"}).to_csv(output_dir + f"/{site}_labels.csv", index=False) # type: ignore
+    plot_label_distribution(df, downloaded_id, plot_dir, site)
+
+def extract_labels(config: dict):
+    dataset_config = config["dataset"]
+
+    data_dir = dataset_config.get("data_dir", "data")
+    phenotypes_dir = dataset_config.get("phenotypes_dir", "data/phenotypes")
+    output_dir = dataset_config.get("preprocessed_dir", "data/processed")
+    plot_dir = dataset_config.get("plot_dir", "data/plots")
+
+    downloaded_id = pd.read_csv(data_dir + "/downloaded.txt", header=None)[0].tolist()
+    final_df = merge_phenotypic_data(phenotypes_dir, output_dir)
+    if not Path(plot_dir).exists():
+        Path(plot_dir).mkdir(parents=True, exist_ok=True)
+
+    for site, site_id in SITES.items():
+        extract_label(final_df, downloaded_id, output_dir, site, site_id=site_id, plot_dir=plot_dir)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--data_dir", type=str, default="data")
-    parser.add_argument("--output_dir", type=str, default="data/processed")
-    parser.add_argument("--plot", action="store_true")
-    args = parser.parse_args()
-
-    downloaded_id = pd.read_csv(args.data_dir + "/downloaded.txt", header=None)[0].tolist()
-    final_df = merge_phenotypic_data(args.data_dir, args.output_dir)
-
-    if not Path(args.output_dir).exists():
-        Path(args.output_dir).mkdir(parents=True, exist_ok=True)
-
-    NYU_df = final_df[final_df["Site"] == 5]
-    NYU_df[NYU_df["ScanDir ID"].isin(downloaded_id)][["ScanDir ID", "DX"]].rename(columns={"ScanDir ID": "id", "DX": "label"}).to_csv(args.output_dir + "/NYU_labels.csv", index=False)
-    if args.plot:
-        plot_label_distribution(NYU_df, downloaded_id)
-
-
-
+    with open("config.toml", "rb") as toml_file:
+        config = tomllib.load(toml_file)
+        extract_labels(config)

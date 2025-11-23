@@ -1,5 +1,6 @@
 from pathlib import Path
 import pandas as pd
+import numpy as np
 
 class SubjectDataset:
     def __init__(self, image_dir="data/raw", label_path="data/processed/NYU_labels.csv"):
@@ -28,6 +29,9 @@ class SubjectDataset:
     def get_label(self, id):
         return self.label_df[self.label_df["id"] == id]["label"].values[0] # type: ignore
     
+    def get_labels(self):
+        return self.label_df["label"].tolist()
+    
     def get_all_ids(self):
         return self.label_df["id"].tolist()
     
@@ -37,9 +41,16 @@ class SubjectDataset:
     def enumerate_subjects(self):
         for id in self.get_all_ids():
             yield id, self.get_image_path(id), self.get_mask_path(id)
-
     
-
+    def get_fc(self, id):
+        fc_path = Path("data/processed/fc") / f"{id}.npy"
+        if not fc_path.exists():
+            raise FileNotFoundError(f"FC file not found, please run `uv run utils/feature_extract.py` to extract the FC: {fc_path}")
+        return np.load(fc_path)
+    
+    def get_fc_array(self):
+        return np.stack([self.get_fc(id) for id in self.get_all_ids()])
+    
 if __name__ == "__main__":
     subject = SubjectDataset(image_dir="data/raw", label_path="data/processed/NYU_labels.csv")
     print(subject.get_mask_path("sub-0010001"))

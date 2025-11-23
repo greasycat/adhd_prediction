@@ -88,7 +88,7 @@ def pretty_print_list(items, indent=2):
     print("]")
 
 
-def download_descriptions(description_uri, destination="data"):
+def download_phenotypes(description_uri, destination="data"):
     s3 = S3Browser(description_uri)
     files, _ = s3.list_s3("")
     print(f"Downloading {len(files)} description files...")
@@ -106,10 +106,6 @@ MNI_TAG = "_ses-1_task-rest_run-1_space-MNI152NLin2009cAsym_desc-"
 
 
 def download_preprocessed_data(preprocessed_uri, image_destination="data/raw", info_destination="data"):
-
-    if not Path(image_destination).exists():
-        Path(image_destination).mkdir(parents=True, exist_ok=True)
-
     downloaded_ids = []
     if Path(info_destination + "/downloaded.txt").exists():
         with open(info_destination + "/downloaded.txt", "r") as f1:
@@ -125,7 +121,7 @@ def download_preprocessed_data(preprocessed_uri, image_destination="data/raw", i
 
             id = dir.strip("/")
             if id in downloaded_ids:
-                print(f"{id} already downloaded, skipping.")
+                progress.set_description(f"{id} already downloaded, skipping.")
                 progress.update(1)
                 continue
             mask_file = f"{id}/ses-1/func/{id}{MNI_TAG}brain_mask.nii.gz"
@@ -144,11 +140,12 @@ def download_preprocessed_data(preprocessed_uri, image_destination="data/raw", i
                 progress.update(1)
             except Exception as e:
                 shutil.rmtree(dest)
-                print(f"Error downloading data for subject {id}: {e}")
+                progress.set_description(f"Error downloading data for subject {id}: {e}")
                 f2.write(f"{id}\n")
                 f2.flush()
                 progress.update(1)
                 continue
+    progress.close()
 
 
 def ls_folder(s3, folder):
@@ -196,31 +193,40 @@ def interactive_browser(s3: S3Browser):
                 print("Invalid input")
         
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--interactive", action="store_true")
-    args = parser.parse_args()
+def download_dataset(config: dict, interactive=False):
+    dataset_config = config["dataset"]
+    root_dir = dataset_config.get("root_dir", "data")
+    raw_dir = dataset_config.get("raw_dir", "data/raw")
+    phenotypes_dir = dataset_config.get("phenotypes_dir", "data/phenotypes")
 
-
-    with open("config.toml", "rb") as toml_file:
-        toml_config = tomllib.load(toml_file)
-        dataset_config = toml_config["dataset"]
+    if not Path(root_dir).exists():
+        Path(root_dir).mkdir(parents=True, exist_ok=True)
+    if not Path(raw_dir).exists():
+        Path(raw_dir).mkdir(parents=True, exist_ok=True)
+    if not Path(phenotypes_dir).exists():
+        Path(phenotypes_dir).mkdir(parents=True, exist_ok=True)
 
     preprocessed_uri = dataset_config.get("preprocessed_uri", None)
     if preprocessed_uri is None:
         raise ValueError("S3 URI not found in config.toml under [dataset] section.")
 
-    description_uri = dataset_config.get("description_uri", None)
-    if description_uri is None:
+    phenotypes_uri = dataset_config.get("description_uri", None)
+    if phenotypes_uri is None:
         raise ValueError("S3 URI not found in config.toml under [dataset] section.")
 
-    if args.interactive:
+    if interactive:
         interactive_browser(S3Browser(preprocessed_uri))
         return
 
-    download_descriptions(description_uri, destination="data")
-    download_preprocessed_data(preprocessed_uri, image_destination="data/raw", info_destination="data")
+    download_phenotypes(phenotypes_uri, destination=phenotypes_dir)
+    download_preprocessed_data(preprocessed_uri, image_destination=raw_dir, info_destination=root_dir)
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "--interactive", action="store_true")
+    args = parser.parse_args()
+    with open("config.toml", "rb") as toml_file:
+        toml_config = tomllib.load(toml_file)
+        download_dataset(toml_config, interactive=args.interactive)

@@ -1,3 +1,21 @@
 [dataset]
+# S3 URI of the fMRIprep preprocessed data
 preprocessed_uri = "s3://fcp-indi/data/Projects/ADHD200/Outputs/fmriprep/fmriprep/"
+
+# S3 URI of the phenotypes data
 description_uri = "s3://fcp-indi/data/Projects/ADHD200/RawDataBIDS/"
+
+# Root directory
+data_dir = "data"
+
+# Downloaded preprocessed images directory
+raw_dir = "data/raw"
+
+# Preprocessed data directory
+preprocessed_dir = "data/processed"
+
+# Phenotypes directory
+phenotypes_dir = "data/phenotypes"
+
+# Label distribution plot directory
+plot_dir = "data/plots"
