@@ -10,6 +10,8 @@ from sklearn.model_selection import train_test_split
 from pipeline import SubjectDataset
 from model.transformer import TransformerClassifierMultiToken
 from model.resnet import ResNetClassifier
+from model.skip_vote import SkipVoteNet
+from utils.label_extractor import SITES
 
 
 class FCDataset(Dataset):
@@ -203,7 +205,7 @@ def train_model(
               f"Val Loss={val_loss:.4f} Acc={val_acc:.4f} | Best Val={best_val_acc:.4f}@{best_epoch}")
     
     # Load best model for final evaluation on test set
-    print("\nEvaluating on test set (NEURO)...")
+    print("\nEvaluating on test set..")
     checkpoint = torch.load(model_save_path)
     model.load_state_dict(checkpoint['model_state_dict'])
     test_loss, test_acc, predictions, labels = evaluate(model, test_loader, criterion, device)
@@ -256,98 +258,88 @@ def create_model(model_name: str, input_dim: int, config: dict) -> nn.Module:
             num_classes=1
         )
     
+    elif model_name == "SkipVoteNet":
+        return SkipVoteNet()
     else:
         raise ValueError(f"Unknown model: {model_name}")
 
 
-def get_available_models() -> list[tuple[str, str]]:
+def get_available_models() -> list[tuple[str, str, dict[str, bool]]]:
     """Get list of available models.
     
     Returns:
-        List of (model_name, description) tuples
+        List of (model_name, description, config) tuples
     """
     return [
-        ("Transformer", "Transformer with multi-token attention"),
-        ("ResNet", "Residual Network with fully-connected layers"),
+        ("Transformer", "Transformer with multi-token attention", {"use_rfe": True, "flatten": True}),
+        ("ResNet", "Residual Network with fully-connected layers", {"use_rfe": False, "flatten": True}),
+        ("SkipVoteNet", "Skip Vote Net", {"use_rfe": False, "flatten": False}),
     ]
 
 
-def display_model_menu(available_models: list[tuple[str, str]]):
+def display_model_menu(available_models: list[tuple[str, str, dict[str, bool]]]):
     """Display the model selection menu."""
     print("\n" + "-" * 60)
     print("Available Models:")
     print("-" * 60)
-    for i, (name, description) in enumerate(available_models, 1):
+    for i, (name, description, _) in enumerate(available_models, 1):
         print(f"{i}) {name}: {description}")
     print(f"{len(available_models) + 1}) Quit")
     print("-" * 60)
 
+def merge_test_datasets(test_datasets: list[SubjectDataset], selected_features = None, flatten: bool = True):
+    X_test = []
+    y_test = []
+    for test_dataset in test_datasets:
+        X_test.append(test_dataset.get_fc_array(flatten=flatten, selected_features=selected_features))
+        y_test.append(np.array(test_dataset.get_labels(binary=True), dtype=np.float32))
+    return np.concatenate(X_test, axis=0), np.concatenate(y_test, axis=0)
 
-def train_test_nn(config: dict):
-    """Main function to run training with model selection menu."""
-    
-    # Get paths from config
+def prepare_data(config: dict, use_rfe: bool, flatten: bool = True) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, int]:
     dataset_config = config["dataset"]
     image_dir = dataset_config.get("raw_dir", "data/raw")
     preprocessed_dir = dataset_config.get("preprocessed_dir", "data/processed")
-    
-    feature_config = config["feature"]
-    site_to_train = feature_config.get("site_to_train", "NYU")
-    selected_features_path = f"{preprocessed_dir}/{site_to_train}_feature_support.npy"
-    
-    # Verify selected features file exists
-    if not Path(selected_features_path).exists():
-        raise FileNotFoundError(
-            f"Selected features file not found: {selected_features_path}\n"
-            f"Please run RFE feature selection first."
-        )
-    
-    # Create NYU dataset (will be split into train/validation)
+    site_to_train = config["feature"].get("site_to_train", "NYU")
+
     nyu_dataset = SubjectDataset(
         image_dir=image_dir,
-        label_path=f"{preprocessed_dir}/NYU_labels.csv",
+        label_path=f"{preprocessed_dir}/{site_to_train}_labels.csv",
         fc_dir=f"{preprocessed_dir}/fc"
     )
-    
-    # Create NEURO dataset (used only for final testing)
-    test_dataset = SubjectDataset(
+
+    test_datasets = [SubjectDataset(
         image_dir=image_dir,
-        label_path=f"{preprocessed_dir}/NEURO_labels.csv",
+        label_path=f"{preprocessed_dir}/{site}_labels.csv",
         fc_dir=f"{preprocessed_dir}/fc"
-    )
-    
-    # Get NYU data and split into train/validation
-    X_nyu = nyu_dataset.get_fc_array(flatten=True, selected_features=selected_features_path)
-    y_nyu = np.array(nyu_dataset.get_labels(binary=True), dtype=np.float32)
-    
-    # Split NYU dataset into train and validation (80/20 split)
-    training_config = config.get("training", {})
-    val_split = training_config.get("val_split", 0.2)
-    random_state = training_config.get("random_state", 42)
-    
-    X_train, X_val, y_train, y_val = train_test_split(
-        X_nyu, y_nyu,
-        test_size=val_split,
-        random_state=random_state,
-        stratify=y_nyu
-    )
-    
-    # Ensure arrays are numpy arrays
-    X_train = np.asarray(X_train)
-    X_val = np.asarray(X_val)
-    y_train = np.asarray(y_train, dtype=np.float32)
-    y_val = np.asarray(y_val, dtype=np.float32)
-    
-    # Get test data (NEURO)
-    X_test = test_dataset.get_fc_array(flatten=True, selected_features=selected_features_path)
-    y_test = np.array(test_dataset.get_labels(binary=True), dtype=np.float32)
-    
-    input_dim = X_train.shape[1]
-    
-    print("NYU dataset split:")
-    print(f"  Train: {len(X_train)} samples ({np.bincount(y_train.astype(int))})")
-    print(f"  Validation: {len(X_val)} samples ({np.bincount(y_val.astype(int))})")
-    print(f"NEURO test dataset: {len(X_test)} samples ({np.bincount(y_test.astype(int))})")
+    ) for site in SITES.keys() if site != site_to_train] # Pick all sites except the one to train
+
+    if use_rfe: # If RFE is used, use the selected features
+        selected_features_path = f"{preprocessed_dir}/{site_to_train}_feature_support.npy"
+        if not Path(selected_features_path).exists():
+            raise FileNotFoundError(
+                f"Selected features file not found: {selected_features_path}\n"
+                f"Please run RFE feature selection first."
+            )
+        X_train = nyu_dataset.get_fc_array(flatten=True, selected_features=selected_features_path)
+        y_train = np.array(nyu_dataset.get_labels(binary=True), dtype=np.float32)
+        X_test, y_test = merge_test_datasets(test_datasets, selected_features_path, flatten=True)
+    else: # If RFE is not used, use all features
+        X_train = nyu_dataset.get_fc_array(flatten=flatten)
+        X_train = np.expand_dims(X_train, axis=0)
+        y_train = np.array(nyu_dataset.get_labels(binary=True), dtype=np.float32)
+        X_test, y_test = merge_test_datasets(test_datasets, flatten=flatten)
+
+    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42, stratify=y_train) # Split the NYU dataset into train and validation
+
+    if flatten:
+        input_dim = X_train.shape[1] # type: ignore
+    else:
+        input_dim = X_train.shape[1:] # type: ignore
+
+    return X_train, X_val, X_test, y_train, y_val, y_test, input_dim # type: ignore
+
+
+def train_test_nn(config: dict):
     
     available_models = get_available_models()
     
@@ -368,12 +360,23 @@ def train_test_nn(config: dict):
             print("Invalid input. Please enter a number.")
             continue
         
-        model_name, _ = available_models[choice_idx]
-        
+        model_name, _, model_config = available_models[choice_idx]
+
+        X_train, X_val, X_test, y_train, y_val, y_test, input_dim = prepare_data(config, use_rfe=model_config["use_rfe"], flatten=model_config["flatten"])
+
+        print(f"X_train shape: {X_train.shape}")
+        print(f"X_val shape: {X_val.shape}")
+        print(f"X_test shape: {X_test.shape}")
+        print(f"y_train shape: {y_train.shape}")
+        print(f"y_val shape: {y_val.shape}")
+        print(f"y_test shape: {y_test.shape}")
+        print(f"input_dim: {input_dim}")
+
         model = create_model(model_name, input_dim, config)
         
         model_save_path = f"model/{model_name.lower()}_best.pt"
         Path(model_save_path).parent.mkdir(parents=True, exist_ok=True)
+
         
         train_model(
             model=model,

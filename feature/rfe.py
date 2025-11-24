@@ -2,6 +2,7 @@
 import numpy as np
 from sklearn.feature_selection import RFE
 from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split
 
 from pipeline.subject import SubjectDataset
 
@@ -19,13 +20,14 @@ def display_menu():
 
 def rfe(config: dict):
     feature_config = config["feature"]
-    site_to_use = feature_config["site_to_use"]
+    site_to_train = feature_config["site_to_train"]
     n_features = feature_config["rfe_n_features"]
 
-    subject_dataset = SubjectDataset(site_to_use)
+    subject_dataset = SubjectDataset(site_to_train)
 
     X = subject_dataset.get_fc_array(flatten=True)
     y = subject_dataset.get_labels(binary=True)
+    X_train, _, y_train, _ = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
     while True:
         choice = display_menu()
@@ -33,9 +35,9 @@ def rfe(config: dict):
             break
         elif choice == "1":
             print("Running SVM RFE... may take 15 minutes or longer to complete")
-            support, ranking = svm_rfe(X, y, n_features=n_features)
+            support, ranking = svm_rfe(X_train, y_train, n_features=n_features)
             support_indices = np.where(support)[0]
-            np.save(f"data/processed/{site_to_use}_feature_support.npy", support_indices)
-            np.save(f"data/processed/{site_to_use}_feature_ranking.npy", ranking)
-            print(f"Saved feature support and ranking to data/processed/{site_to_use}_feature_support.npy and data/processed/{site_to_use}_feature_ranking.npy")
+            np.save(f"data/processed/{site_to_train}_feature_support.npy", support_indices)
+            np.save(f"data/processed/{site_to_train}_feature_ranking.npy", ranking)
+            print(f"Saved feature support and ranking to data/processed/{site_to_train}_feature_support.npy and data/processed/{site_to_train}_feature_ranking.npy")
 

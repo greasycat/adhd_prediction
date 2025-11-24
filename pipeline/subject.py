@@ -1,4 +1,5 @@
 from pathlib import Path
+from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
 
@@ -66,10 +67,19 @@ class SubjectDataset:
 
             
             if selected_features is not None:
-                print("Corr shape before selection: ", corr.shape)
                 selected_features = np.load(selected_features)
                 corr = corr[:, selected_features]
         return corr
+    
+    def get_train_val_test_split(self, selected_features=None, test_size=0.2, random_state=42):
+        X = self.get_fc_array(flatten=True)
+        y = np.array(self.get_labels(binary=True), dtype=np.float32)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state, stratify=y)
+        if selected_features is not None:
+            selected_features = np.load(selected_features)
+            X_train = X_train[:, selected_features] # type: ignore
+            X_test = X_test[:, selected_features] # type: ignore
+        return X_train, X_test, y_train, y_test
     
 if __name__ == "__main__":
     subject = SubjectDataset(image_dir="data/raw", label_path="data/processed/NYU_labels.csv")

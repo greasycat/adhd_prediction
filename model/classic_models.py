@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.model_selection import cross_validate
+from sklearn.model_selection import cross_validate, train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
@@ -42,13 +42,10 @@ def build_menu():
         ("Random Forest Classifier", random_forest_classifier()),
         ("SVM Classifier (Linear)", svm_classifier(kernel="linear")),
         ("SVM Classifier (RBF)", svm_classifier(kernel="rbf")),
-        ("KNN Classifier", knn_classifier(n_neighbors=5)),
         ("Ridge Classifier", ridge_classifier(alpha=0.1)),
     ]
 
-def train_and_evaluate_model(subject_dataset: SubjectDataset, selected_features: np.ndarray):
-    X = subject_dataset.get_fc_array(flatten=True, selected_features=selected_features)
-    y = subject_dataset.get_labels(binary=True)
+def train_and_evaluate_model(X, y):
 
     best_estimators = []
     for model_name, model in build_menu():
@@ -58,12 +55,9 @@ def train_and_evaluate_model(subject_dataset: SubjectDataset, selected_features:
     return best_estimators
     
 
-def test_model(subject_dataset: SubjectDataset, best_estimators, selected_features: str):
-    X = subject_dataset.get_fc_array(flatten=True, selected_features=selected_features)
-    y = subject_dataset.get_labels(binary=True)
-
+def test_model(X, y, best_estimators, dataset_name):
     for model_name, best_estimator in best_estimators:
-        print("-"*10 + f"Testing {model_name}" + "-"*10)
+        print("-"*10 + f"Testing {model_name} on {dataset_name}" + "-"*10)
         predictions = best_estimator.predict(X)
         print(f"Accuracy: {accuracy_score(y, predictions)}")
         print(classification_report(y, predictions))
@@ -80,11 +74,15 @@ def train_test_classics(config: dict):
 
     selected_features = preprocessed_dir + f"/{site_to_train}_feature_support.npy"
 
-    # Train on NYU dataset
+    # Train on NYU train set
     NYU_dataset = SubjectDataset(image_dir=image_dir, label_path=preprocessed_dir + "/NYU_labels.csv", fc_dir=preprocessed_dir + "/fc")
-    best_estimators = train_and_evaluate_model(NYU_dataset, selected_features)
-    
-    # Test on NEURO dataset
+    X_train, X_test, y_train, y_test = NYU_dataset.get_train_val_test_split(selected_features=selected_features)
+    best_estimators = train_and_evaluate_model(X_train, y_train)
+    # Test on NYU test set
+    test_model(X_test, y_test, best_estimators, "NYU test set")
+
+    # Test on NEURO test set
     NEURO_dataset = SubjectDataset(image_dir=image_dir, label_path=preprocessed_dir + "/NEURO_labels.csv", fc_dir=preprocessed_dir + "/fc")
-    test_model(NEURO_dataset, best_estimators, selected_features)
+    X_train, X_test, y_train, y_test = NEURO_dataset.get_train_val_test_split(selected_features=selected_features)
+    test_model(X_test, y_test, best_estimators, "NEURO test set")
 

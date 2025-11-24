@@ -4,14 +4,15 @@ from pathlib import Path
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+# Some sites are ignored because they are not available in the fMRIprep dataset due to artifacts
 SITES = {
     "PEKING": 1,
-    "BROWN": 2,
-    "KKI": 3,
+    # "BROWN": 2, 
+    # "KKI": 3,
     "NEURO": 4,
     "NYU": 5,
     "OHSU": 6,
-    "PITT": 7,
+    # "PITT": 7,
 }
 
 def merge_phenotypic_data(downloaded_id, output_dir="data", processed_dir="data/processed"):

@@ -4,7 +4,7 @@ from utils import download_dataset, extract_labels
 from feature.fc import compute_fc
 from feature.rfe import rfe
 from model.classic_models import train_test_classics
-from pipeline.train_nn import train_test_nn
+from pipeline.train_test_nn import train_test_nn
 
 def build_menu(config: dict):
     return [
