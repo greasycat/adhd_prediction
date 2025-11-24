@@ -1,12 +1,20 @@
 import tomllib
 import sys
 from utils import download_dataset, extract_labels
+from feature.fc import compute_fc
+from feature.rfe import rfe
+from model.classic_models import train_test_classics
+from pipeline.train_nn import train_test_nn
 
 def build_menu(config: dict):
     return [
         ("Browse the dataset", lambda: download_dataset(config, interactive=True)),
         ("Download the dataset", lambda: download_dataset(config)),
         ("Extract & visualize labels", lambda: extract_labels(config)),
+        ("Compute FC", lambda: compute_fc(config)),
+        ("Reduce Feature Elimination", lambda: rfe(config)),
+        ("Train and test classic models", lambda: train_test_classics(config)),
+        ("Train and test neural network models", lambda: train_test_nn(config)),
     ]
 
 def display_menu(menu: list):
@@ -19,7 +27,7 @@ def display_menu(menu: list):
 
     choice = input("Enter your choice: ")
     if choice == "q":
-        sys.exit("Exiting...")
+        sys.exit(0)
 
     if choice not in [str(i) for i in range(len(menu))]:
         return None

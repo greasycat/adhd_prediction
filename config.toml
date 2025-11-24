@@ -19,3 +19,35 @@ phenotypes_dir = "data/phenotypes"
 
 # Label distribution plot directory
 plot_dir = "data/plots"
+
+[feature]
+
+rfe_n_features = 90
+site_to_train = "NYU" # Available sites: NEURO, NYU, OHSU, 
+
+[model]
+# Common model configuration
+input_dim = 90
+dropout = 0.1
+
+# Transformer model configuration
+d_model = 128
+nhead = 8
+num_layers = 3
+dim_feedforward = 512
+
+# ResNet model configuration
+# Note: hidden_dims is set programmatically, defaults to [256, 128, 64]
+use_batch_norm = true
+
+[training]
+# Training configuration
+batch_size = 32
+learning_rate = 0.001
+num_epochs = 100
+weight_decay = 0.0001
+
+# Dataset splitting configuration
+val_split = 0.2  # Fraction of NYU dataset to use for validation
+random_state = 42  # Random seed for reproducible train/validation split
+

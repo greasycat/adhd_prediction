@@ -1,14 +1,97 @@
-from utils.subject import SubjectDataset
+from pathlib import Path
+from tqdm import tqdm
+import numpy as np
+import pandas as pd
+
+from nilearn.connectome import ConnectivityMeasure
+from nilearn.maskers import NiftiLabelsMasker
+from nilearn.datasets import fetch_atlas_aal
+
+from utils.label_extractor import SITES
+from pipeline.subject import SubjectDataset
 
 class FC:
-    def __init__(self, subject_dataset: SubjectDataset):
-        self.subject_dataset = subject_dataset
+    def __init__(self, config: dict):
 
-    def get_fc(self, id):
-        return self.subject_dataset.get_fc(id)
+        self.dataset_config = config["dataset"]
+        self.data_dir = self.dataset_config.get("data_dir", "data")
+        self.processed_dir = self.dataset_config.get("processed_dir", "data/processed")
+        self.raw_dir = self.dataset_config.get("raw_dir", "data/raw")
+        self.fc_dir = self.dataset_config.get("fc_dir", "data/processed/fc")
 
-    def get_all_fc(self):
-        return [self.get_fc(id) for id in self.subject_dataset.get_all_ids()]
+        self.aal = fetch_atlas_aal(version="3v2") # Get the AAL atlas
 
-    # def get_all_fc_paths(self):
-    #     return [self.subject_dataset.get_fc_path(id) for id in self.subject_dataset.get_all_ids()]
+        # write map labels to a csv file
+        pd.DataFrame(self.aal["labels"], columns=["label"]).to_csv(self.processed_dir + "/aal_labels.csv", index=False) # type: ignore
+
+        self.datasets = {}
+        for site, _ in SITES.items():
+            self.datasets[site] = SubjectDataset(image_dir=self.raw_dir, label_path=self.processed_dir + f"/{site}_labels.csv", fc_dir=self.fc_dir)
+
+    def _compute_connectivity(self, img):
+        connectome_measure = ConnectivityMeasure(
+            kind="correlation",
+            standardize="zscore_sample", # type: ignore
+        )
+
+        masker = NiftiLabelsMasker(
+            labels_img=self.aal["maps"], 
+            lookup_lut=self.aal["labels"],
+            standardize="zscore_sample", # type: ignore
+            memory="nilearn_cache",
+            n_jobs=24,
+        )
+
+        ts = masker.fit_transform(img)
+        connectome = connectome_measure.fit_transform([ts])
+        return connectome[0]
+    
+    def compute_all_connectivity(self, site: str):
+        subject_dataset: SubjectDataset = self.datasets[site]
+
+        fc_dir = Path(self.processed_dir) / "fc"
+        if not fc_dir.exists():
+            fc_dir.mkdir(parents=True)
+        
+        progress = tqdm(total=len(subject_dataset), desc=f"Computing FC for {site}")
+
+        for id, img, _ in subject_dataset.enumerate_subjects():
+            progress.update(1)
+            fc_path = fc_dir / f"{id}.npy"
+
+            # if fc_path.exists():
+            #     progress.set_description(f"Skipping {id} because it already exists")
+            #     continue
+
+            connectome = self._compute_connectivity(img)
+            np.fill_diagonal(connectome, 0)
+            # get upper triangular part
+            np.save(fc_path, connectome)
+            print(f"Shape of connectome: {connectome.shape}")
+        
+        progress.close()
+
+def display_menu():
+    print("-"*10 + "FC MENU" + "-"*10)
+    for site, id in SITES.items():
+        print(f"{id}) {site}")
+    print("all) Compute FC for all sites")
+    print("q) Quit")
+    return input("Enter your choice: ")
+    
+def compute_fc(config: dict):
+    fc = FC(config)
+    site_swap = dict(zip(SITES.values(), SITES.keys()))
+    while True:
+        choice = display_menu()
+        if choice == "q":
+            break
+        elif choice == "all":
+            for site in site_swap.keys():
+                fc.compute_all_connectivity(site_swap[int(site)])
+        else:
+            choice = int(choice)
+            if choice not in site_swap.keys():
+                print("Invalid choice")
+                continue
+            fc.compute_all_connectivity(site_swap[choice])
