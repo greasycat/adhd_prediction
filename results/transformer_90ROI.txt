@@ -1,0 +1,144 @@
+------------------------------------------------------------
+Available Models:
+------------------------------------------------------------
+1) Transformer: Transformer with multi-token attention
+2) ResNet: Residual Network with fully-connected layers
+3) SkipVoteNet: Skip Vote Net
+4) Quit
+------------------------------------------------------------
+
+Select a model to train (enter number): 1
+X_train shape: (148, 90)
+X_val shape: (38, 90)
+X_test shape: (91, 90)
+y_train shape: (148,)
+y_val shape: (38,)
+y_test shape: (91,)
+input_dim: 90
+
+Training Transformer...
+Train set: 148 samples | Validation set: 38 samples | Test set: 91 samples
+Epoch 1/100: Train Loss=0.8803 Acc=0.4662 | Val Loss=0.6188 Acc=0.5526 | Best Val=0.5526@1
+Epoch 2/100: Train Loss=0.6920 Acc=0.5676 | Val Loss=0.7974 Acc=0.4474 | Best Val=0.5526@1
+Epoch 3/100: Train Loss=0.7206 Acc=0.5135 | Val Loss=0.5953 Acc=0.5526 | Best Val=0.5526@1
+Epoch 4/100: Train Loss=0.7155 Acc=0.5473 | Val Loss=0.6365 Acc=0.5526 | Best Val=0.5526@1
+Epoch 5/100: Train Loss=0.7324 Acc=0.4527 | Val Loss=0.7119 Acc=0.4474 | Best Val=0.5526@1
+Epoch 6/100: Train Loss=0.6680 Acc=0.5743 | Val Loss=0.5907 Acc=0.5526 | Best Val=0.5526@1
+Epoch 7/100: Train Loss=0.7264 Acc=0.5405 | Val Loss=0.6655 Acc=0.5526 | Best Val=0.5526@1
+Epoch 8/100: Train Loss=0.6891 Acc=0.5743 | Val Loss=0.6394 Acc=0.5526 | Best Val=0.5526@1
+Epoch 9/100: Train Loss=0.7049 Acc=0.5405 | Val Loss=0.6525 Acc=0.5526 | Best Val=0.5526@1
+Epoch 10/100: Train Loss=0.6785 Acc=0.5473 | Val Loss=0.7059 Acc=0.4474 | Best Val=0.5526@1
+Epoch 11/100: Train Loss=0.6912 Acc=0.5811 | Val Loss=0.6246 Acc=0.5526 | Best Val=0.5526@1
+Epoch 12/100: Train Loss=0.7108 Acc=0.5068 | Val Loss=0.6400 Acc=0.5526 | Best Val=0.5526@1
+Epoch 13/100: Train Loss=0.7089 Acc=0.5203 | Val Loss=0.6686 Acc=0.5526 | Best Val=0.5526@1
+Epoch 14/100: Train Loss=0.7086 Acc=0.5068 | Val Loss=0.7028 Acc=0.4474 | Best Val=0.5526@1
+Epoch 15/100: Train Loss=0.7036 Acc=0.5608 | Val Loss=0.5939 Acc=0.5526 | Best Val=0.5526@1
+Epoch 16/100: Train Loss=0.7014 Acc=0.5676 | Val Loss=0.6797 Acc=0.5526 | Best Val=0.5526@1
+Epoch 17/100: Train Loss=0.6960 Acc=0.5068 | Val Loss=0.6892 Acc=0.5526 | Best Val=0.5526@1
+Epoch 18/100: Train Loss=0.6792 Acc=0.5878 | Val Loss=0.6455 Acc=0.5526 | Best Val=0.5526@1
+Epoch 19/100: Train Loss=0.6897 Acc=0.5473 | Val Loss=0.6034 Acc=0.5526 | Best Val=0.5526@1
+Epoch 20/100: Train Loss=0.7106 Acc=0.5270 | Val Loss=0.6576 Acc=0.5526 | Best Val=0.5526@1
+Epoch 21/100: Train Loss=0.6937 Acc=0.5000 | Val Loss=0.6626 Acc=0.5526 | Best Val=0.5526@1
+Epoch 22/100: Train Loss=0.6838 Acc=0.5270 | Val Loss=0.6410 Acc=0.5526 | Best Val=0.5526@1
+Epoch 23/100: Train Loss=0.6953 Acc=0.5068 | Val Loss=0.6408 Acc=0.5526 | Best Val=0.5526@1
+Epoch 24/100: Train Loss=0.6844 Acc=0.5608 | Val Loss=0.6488 Acc=0.5526 | Best Val=0.5526@1
+Epoch 25/100: Train Loss=0.6916 Acc=0.5473 | Val Loss=0.6399 Acc=0.5526 | Best Val=0.5526@1
+Epoch 26/100: Train Loss=0.7044 Acc=0.4662 | Val Loss=0.6755 Acc=0.5526 | Best Val=0.5526@1
+Epoch 27/100: Train Loss=0.7098 Acc=0.4595 | Val Loss=0.6496 Acc=0.5526 | Best Val=0.5526@1
+Epoch 28/100: Train Loss=0.6788 Acc=0.5743 | Val Loss=0.6514 Acc=0.5526 | Best Val=0.5526@1
+Epoch 29/100: Train Loss=0.7100 Acc=0.5135 | Val Loss=0.6326 Acc=0.5526 | Best Val=0.5526@1
+Epoch 30/100: Train Loss=0.6937 Acc=0.5270 | Val Loss=0.6435 Acc=0.5526 | Best Val=0.5526@1
+Epoch 31/100: Train Loss=0.6889 Acc=0.5270 | Val Loss=0.6463 Acc=0.5526 | Best Val=0.5526@1
+Epoch 32/100: Train Loss=0.6912 Acc=0.5676 | Val Loss=0.6557 Acc=0.5526 | Best Val=0.5526@1
+Epoch 33/100: Train Loss=0.6992 Acc=0.5541 | Val Loss=0.6485 Acc=0.5526 | Best Val=0.5526@1
+Epoch 34/100: Train Loss=0.6962 Acc=0.5203 | Val Loss=0.6634 Acc=0.5526 | Best Val=0.5526@1
+Epoch 35/100: Train Loss=0.6944 Acc=0.5608 | Val Loss=0.6463 Acc=0.5526 | Best Val=0.5526@1
+Epoch 36/100: Train Loss=0.6852 Acc=0.5473 | Val Loss=0.6447 Acc=0.5526 | Best Val=0.5526@1
+Epoch 37/100: Train Loss=0.6950 Acc=0.5203 | Val Loss=0.6498 Acc=0.5526 | Best Val=0.5526@1
+Epoch 38/100: Train Loss=0.6853 Acc=0.5811 | Val Loss=0.6523 Acc=0.5526 | Best Val=0.5526@1
+Epoch 39/100: Train Loss=0.6908 Acc=0.5608 | Val Loss=0.6430 Acc=0.5526 | Best Val=0.5526@1
+Epoch 40/100: Train Loss=0.7053 Acc=0.5135 | Val Loss=0.6410 Acc=0.5526 | Best Val=0.5526@1
+Epoch 41/100: Train Loss=0.6841 Acc=0.4932 | Val Loss=0.6490 Acc=0.5526 | Best Val=0.5526@1
+Epoch 42/100: Train Loss=0.6922 Acc=0.5068 | Val Loss=0.6611 Acc=0.5526 | Best Val=0.5526@1
+Epoch 43/100: Train Loss=0.6871 Acc=0.5608 | Val Loss=0.6552 Acc=0.5526 | Best Val=0.5526@1
+Epoch 44/100: Train Loss=0.6833 Acc=0.5541 | Val Loss=0.6465 Acc=0.5526 | Best Val=0.5526@1
+Epoch 45/100: Train Loss=0.6828 Acc=0.5405 | Val Loss=0.6443 Acc=0.5526 | Best Val=0.5526@1
+Epoch 46/100: Train Loss=0.6909 Acc=0.5405 | Val Loss=0.6448 Acc=0.5526 | Best Val=0.5526@1
+Epoch 47/100: Train Loss=0.6887 Acc=0.5608 | Val Loss=0.6466 Acc=0.5526 | Best Val=0.5526@1
+Epoch 48/100: Train Loss=0.6781 Acc=0.5541 | Val Loss=0.6492 Acc=0.5526 | Best Val=0.5526@1
+Epoch 49/100: Train Loss=0.7008 Acc=0.5676 | Val Loss=0.6500 Acc=0.5526 | Best Val=0.5526@1
+Epoch 50/100: Train Loss=0.6790 Acc=0.5743 | Val Loss=0.6461 Acc=0.5526 | Best Val=0.5526@1
+Epoch 51/100: Train Loss=0.6920 Acc=0.5541 | Val Loss=0.6462 Acc=0.5526 | Best Val=0.5526@1
+Epoch 52/100: Train Loss=0.7017 Acc=0.5405 | Val Loss=0.6438 Acc=0.5526 | Best Val=0.5526@1
+Epoch 53/100: Train Loss=0.7053 Acc=0.5000 | Val Loss=0.6455 Acc=0.5526 | Best Val=0.5526@1
+Epoch 54/100: Train Loss=0.6834 Acc=0.5338 | Val Loss=0.6475 Acc=0.5526 | Best Val=0.5526@1
+Epoch 55/100: Train Loss=0.6997 Acc=0.4865 | Val Loss=0.6439 Acc=0.5526 | Best Val=0.5526@1
+Epoch 56/100: Train Loss=0.6933 Acc=0.5203 | Val Loss=0.6427 Acc=0.5526 | Best Val=0.5526@1
+Epoch 57/100: Train Loss=0.6825 Acc=0.5608 | Val Loss=0.6459 Acc=0.5526 | Best Val=0.5526@1
+Epoch 58/100: Train Loss=0.6923 Acc=0.5473 | Val Loss=0.6442 Acc=0.5526 | Best Val=0.5526@1
+Epoch 59/100: Train Loss=0.6982 Acc=0.5338 | Val Loss=0.6449 Acc=0.5526 | Best Val=0.5526@1
+Epoch 60/100: Train Loss=0.6870 Acc=0.5811 | Val Loss=0.6441 Acc=0.5526 | Best Val=0.5526@1
+Epoch 61/100: Train Loss=0.6873 Acc=0.5743 | Val Loss=0.6479 Acc=0.5526 | Best Val=0.5526@1
+Epoch 62/100: Train Loss=0.6881 Acc=0.5473 | Val Loss=0.6464 Acc=0.5526 | Best Val=0.5526@1
+Epoch 63/100: Train Loss=0.6885 Acc=0.5541 | Val Loss=0.6456 Acc=0.5526 | Best Val=0.5526@1
+Epoch 64/100: Train Loss=0.6965 Acc=0.5878 | Val Loss=0.6458 Acc=0.5526 | Best Val=0.5526@1
+Epoch 65/100: Train Loss=0.6876 Acc=0.5676 | Val Loss=0.6445 Acc=0.5526 | Best Val=0.5526@1
+Epoch 66/100: Train Loss=0.6990 Acc=0.5270 | Val Loss=0.6445 Acc=0.5526 | Best Val=0.5526@1
+Epoch 67/100: Train Loss=0.7013 Acc=0.5000 | Val Loss=0.6449 Acc=0.5526 | Best Val=0.5526@1
+Epoch 68/100: Train Loss=0.6826 Acc=0.5405 | Val Loss=0.6448 Acc=0.5526 | Best Val=0.5526@1
+Epoch 69/100: Train Loss=0.6740 Acc=0.5946 | Val Loss=0.6461 Acc=0.5526 | Best Val=0.5526@1
+Epoch 70/100: Train Loss=0.6940 Acc=0.5743 | Val Loss=0.6459 Acc=0.5526 | Best Val=0.5526@1
+Epoch 71/100: Train Loss=0.6964 Acc=0.5270 | Val Loss=0.6475 Acc=0.5526 | Best Val=0.5526@1
+Epoch 72/100: Train Loss=0.6962 Acc=0.5270 | Val Loss=0.6508 Acc=0.5526 | Best Val=0.5526@1
+Epoch 73/100: Train Loss=0.6965 Acc=0.5405 | Val Loss=0.6504 Acc=0.5526 | Best Val=0.5526@1
+Epoch 74/100: Train Loss=0.6875 Acc=0.5878 | Val Loss=0.6502 Acc=0.5526 | Best Val=0.5526@1
+Epoch 75/100: Train Loss=0.6885 Acc=0.5743 | Val Loss=0.6495 Acc=0.5526 | Best Val=0.5526@1
+Epoch 76/100: Train Loss=0.6922 Acc=0.5473 | Val Loss=0.6484 Acc=0.5526 | Best Val=0.5526@1
+Epoch 77/100: Train Loss=0.6920 Acc=0.5270 | Val Loss=0.6494 Acc=0.5526 | Best Val=0.5526@1
+Epoch 78/100: Train Loss=0.6919 Acc=0.5135 | Val Loss=0.6492 Acc=0.5526 | Best Val=0.5526@1
+Epoch 79/100: Train Loss=0.6926 Acc=0.5541 | Val Loss=0.6486 Acc=0.5526 | Best Val=0.5526@1
+Epoch 80/100: Train Loss=0.6908 Acc=0.5608 | Val Loss=0.6469 Acc=0.5526 | Best Val=0.5526@1
+Epoch 81/100: Train Loss=0.6881 Acc=0.5473 | Val Loss=0.6466 Acc=0.5526 | Best Val=0.5526@1
+Epoch 82/100: Train Loss=0.6815 Acc=0.5473 | Val Loss=0.6457 Acc=0.5526 | Best Val=0.5526@1
+Epoch 83/100: Train Loss=0.6877 Acc=0.5405 | Val Loss=0.6453 Acc=0.5526 | Best Val=0.5526@1
+Epoch 84/100: Train Loss=0.6865 Acc=0.5203 | Val Loss=0.6442 Acc=0.5526 | Best Val=0.5526@1
+Epoch 85/100: Train Loss=0.7001 Acc=0.5338 | Val Loss=0.6444 Acc=0.5526 | Best Val=0.5526@1
+Epoch 86/100: Train Loss=0.6906 Acc=0.5270 | Val Loss=0.6441 Acc=0.5526 | Best Val=0.5526@1
+Epoch 87/100: Train Loss=0.6869 Acc=0.5338 | Val Loss=0.6440 Acc=0.5526 | Best Val=0.5526@1
+Epoch 88/100: Train Loss=0.6872 Acc=0.5270 | Val Loss=0.6440 Acc=0.5526 | Best Val=0.5526@1
+Epoch 89/100: Train Loss=0.6836 Acc=0.5811 | Val Loss=0.6442 Acc=0.5526 | Best Val=0.5526@1
+Epoch 90/100: Train Loss=0.6982 Acc=0.5270 | Val Loss=0.6440 Acc=0.5526 | Best Val=0.5526@1
+Epoch 91/100: Train Loss=0.7016 Acc=0.5676 | Val Loss=0.6437 Acc=0.5526 | Best Val=0.5526@1
+Epoch 92/100: Train Loss=0.6977 Acc=0.5135 | Val Loss=0.6441 Acc=0.5526 | Best Val=0.5526@1
+Epoch 93/100: Train Loss=0.6960 Acc=0.5811 | Val Loss=0.6447 Acc=0.5526 | Best Val=0.5526@1
+Epoch 94/100: Train Loss=0.6939 Acc=0.5541 | Val Loss=0.6452 Acc=0.5526 | Best Val=0.5526@1
+Epoch 95/100: Train Loss=0.6835 Acc=0.5608 | Val Loss=0.6455 Acc=0.5526 | Best Val=0.5526@1
+Epoch 96/100: Train Loss=0.6906 Acc=0.5541 | Val Loss=0.6455 Acc=0.5526 | Best Val=0.5526@1
+Epoch 97/100: Train Loss=0.6862 Acc=0.5473 | Val Loss=0.6457 Acc=0.5526 | Best Val=0.5526@1
+Epoch 98/100: Train Loss=0.6900 Acc=0.5676 | Val Loss=0.6460 Acc=0.5526 | Best Val=0.5526@1
+Epoch 99/100: Train Loss=0.6917 Acc=0.5338 | Val Loss=0.6461 Acc=0.5526 | Best Val=0.5526@1
+Epoch 100/100: Train Loss=0.6925 Acc=0.5541 | Val Loss=0.6461 Acc=0.5526 | Best Val=0.5526@1
+
+Evaluating on test set..
+
+Best Validation Accuracy: 0.5526 (epoch 1)
+Test Accuracy: 0.3956
+
+Classification Report (Test Set):
+/home/yelena/miniconda3/envs/adhd-prediction/lib/python3.14/site-packages/sklearn/metrics/_classification.py:1731: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", result.shape[0])
+/home/yelena/miniconda3/envs/adhd-prediction/lib/python3.14/site-packages/sklearn/metrics/_classification.py:1731: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", result.shape[0])
+/home/yelena/miniconda3/envs/adhd-prediction/lib/python3.14/site-packages/sklearn/metrics/_classification.py:1731: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", result.shape[0])
+              precision    recall  f1-score   support
+
+     Control       0.00      0.00      0.00        55
+        ADHD       0.40      1.00      0.57        36
+
+    accuracy                           0.40        91
+   macro avg       0.20      0.50      0.28        91
+weighted avg       0.16      0.40      0.22        91
+
+
+Model saved to: model/transformer_best.pt
