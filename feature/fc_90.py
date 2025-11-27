@@ -1,5 +1,5 @@
-# Downsize the FC to 90 regions
-# removing the 26 cerebellar regions from the 116 regions in AAL atlas
+# Downsize the FC to 90 ROIs
+# removing the 26 cerebellar regions from the 116 regions in AAL atlases version 2    
 
 from pathlib import Path
 from tqdm import tqdm
@@ -26,7 +26,7 @@ class FC:
         Path(self.processed_dir).mkdir(parents=True, exist_ok=True)
         Path(self.fc_dir).parent.mkdir(parents=True, exist_ok=True)
 
-        self.aal = fetch_atlas_aal(version="SPM12") # Get the AAL atlas
+        self.aal = fetch_atlas_aal(version="SPM12") # Get the AAL atlas, version 2, 116 regions in total
 
         # write map labels to a csv file
         labels = [str(l) for l in self.aal["labels"]] # type: ignore
