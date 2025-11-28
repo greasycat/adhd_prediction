@@ -42,9 +42,9 @@ use_batch_norm = true
 
 [training]
 # Training configuration
-batch_size = 32
+batch_size = 4
 learning_rate = 0.001
-num_epochs = 100
+num_epochs = 30
 weight_decay = 0.0001
 
 # Dataset splitting configuration

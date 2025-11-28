@@ -325,7 +325,6 @@ def prepare_data(config: dict, use_rfe: bool, flatten: bool = True) -> tuple[np.
         X_test, y_test = merge_test_datasets(test_datasets, selected_features_path, flatten=True)
     else: # If RFE is not used, use all features
         X_train = nyu_dataset.get_fc_array(flatten=flatten)
-        X_train = np.expand_dims(X_train, axis=0)
         y_train = np.array(nyu_dataset.get_labels(binary=True), dtype=np.float32)
         X_test, y_test = merge_test_datasets(test_datasets, flatten=flatten)
 
@@ -334,7 +333,11 @@ def prepare_data(config: dict, use_rfe: bool, flatten: bool = True) -> tuple[np.
     if flatten:
         input_dim = X_train.shape[1] # type: ignore
     else:
-        input_dim = X_train.shape[1:] # type: ignore
+        # expand dimensions to add channel dimension for 2D CNN
+        X_train = np.expand_dims(X_train, axis=1)
+        X_val = np.expand_dims(X_val, axis=1)
+        X_test = np.expand_dims(X_test, axis=1)
+        input_dim = X_train.shape[2:] # type: ignore
 
     return X_train, X_val, X_test, y_train, y_val, y_test, input_dim # type: ignore
 

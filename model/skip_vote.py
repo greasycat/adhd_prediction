@@ -93,6 +93,7 @@ class SkipBlock(nn.Module):
         return out
 
 if __name__ == "__main__":
+    from torchview import draw_graph
     x = torch.randn(4, 1, 166, 166)
     skip_vote_net = SkipVoteNet(1, [64, 128, 256, 512])
-    print(skip_vote_net(x).shape)
+    draw_graph(skip_vote_net, input_size=x.shape, save_graph=True, filename="skip_vote", expand_nested=True)
