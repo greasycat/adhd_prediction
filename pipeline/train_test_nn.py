@@ -42,6 +42,13 @@ def train_epoch(model, dataloader, criterion, optimizer, device):
     
     for X, y in dataloader:
         X, y = X.to(device), y.to(device)
+        # Ensure correct shape for 2D CNN model
+        if isinstance(model, SkipVoteNet):
+            if X.dim() == 3:  # (batch, H, W) -> (batch, 1, H, W)
+                X = X.unsqueeze(1)
+            elif X.dim() == 4 and X.shape[0] == 1 and X.shape[1] != 1:
+                # Handle rare case where shape became (1, batch, H, W)
+                X = X.squeeze(0).unsqueeze(1)
         
         # Forward pass
         optimizer.zero_grad()
@@ -73,6 +80,13 @@ def evaluate(model, dataloader, criterion, device):
     with torch.no_grad():
         for X, y in dataloader:
             X, y = X.to(device), y.to(device)
+            
+            # Ensure correct shape for 2D CNN model
+            if isinstance(model, SkipVoteNet):
+                if X.dim() == 3:  # (batch, H, W) -> (batch, 1, H, W)
+                    X = X.unsqueeze(1)
+                elif X.dim() == 4 and X.shape[0] == 1 and X.shape[1] != 1:
+                    X = X.squeeze(0).unsqueeze(1)
             
             outputs = model(X).squeeze()
             loss = criterion(outputs, y)

@@ -25,6 +25,9 @@ class SkipVoteNet(nn.Module):
             nn.MaxPool2d(kernel_size=4)
         )
 
+        # Ensure a fixed spatial size before the FC layers regardless of input HxW
+        self.adaptive_pool = nn.AdaptiveAvgPool2d((13, 13))
+
         flatten_dim = hidden_dims[3] * 13 * 13
         fc_dims = [flatten_dim] + fc_dims
 
@@ -53,7 +56,9 @@ class SkipVoteNet(nn.Module):
 
         x4 = self.skip_path_4(x)
 
-        x = x4.view(x4.size(0), -1) # flatten
+        # Adapt to fixed 13x13 to match the declared flatten_dim
+        x = self.adaptive_pool(x4)
+        x = x.view(x.size(0), -1) # flatten
         for fc_layer in self.fc_layers:
             x = fc_layer(x)
 

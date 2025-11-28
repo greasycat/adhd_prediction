@@ -34,4 +34,6 @@ dependencies:
   # Pip dependencies
   - pip:
     - nilearn>=0.12.1
+    - torch>=2.9.1
+    - torchvision>=0.24.1
 
