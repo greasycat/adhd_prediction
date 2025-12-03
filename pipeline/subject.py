@@ -39,6 +39,19 @@ class SubjectDataset:
             return self.label_df["label"].clip(0, 1).tolist()
 
         return self.label_df["label"].tolist()
+
+    def get_phenotype_array(self, columns=None):
+        """
+        Get phenotypic features.
+        """
+        if columns is None:
+            # Use all columns except the identifier and label as phenotypes
+            columns = [
+                c
+                for c in self.label_df.columns
+                if c not in ["id", "label"]
+            ]
+        return self.label_df[columns].to_numpy(dtype=np.float32)
     
     def get_all_ids(self):
         return self.label_df["id"].tolist()
