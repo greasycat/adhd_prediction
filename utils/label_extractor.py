@@ -43,10 +43,34 @@ def plot_label_distribution(df,plot_dir="data/plots", site="NYU"):
     plt.savefig(plot_dir + f"/{site}_label_distribution.png")
     plt.close()
 
+
 def extract_label(df, output_dir="data", site="NYU", site_id=5, plot_dir="data/plots"):
-    df = df[df["Site"] == site_id]
-    df[["ScanDir ID", "DX"]].rename(columns={"ScanDir ID": "id", "DX": "label"}).to_csv(output_dir + f"/{site}_labels.csv", index=False) # type: ignore
-    plot_label_distribution(df, plot_dir, site)
+    """
+    Extract site-specific labels (DX) and selected phenotypic features.
+    """
+    # 1) Site filter
+    site_df = df[df["Site"] == site_id].copy()
+
+    # 2) Select phenotype columns
+    phenotype_cols = [
+        "Gender",          # Categorical
+        "Age",             # Continuous
+        "MeanFD",          # Continuous
+        "MaxFD",           # Continuous
+        "VerbalIQ",        # Continuous
+        "PerformanceIQ",   # Continuous
+    ]
+    available_pheno_cols = [c for c in phenotype_cols if c in site_df.columns]
+
+    # 3) Build the final DataFrame with ID, label, and phenotypes
+    base_cols = ["ScanDir ID", "DX"]
+    selected_cols = base_cols + available_pheno_cols
+    site_df = site_df[selected_cols].copy()
+
+    site_df = site_df.rename(columns={"ScanDir ID": "id", "DX": "label"})
+    site_df.to_csv(output_dir + f"/{site}_labels.csv", index=False)
+
+    plot_label_distribution(site_df, plot_dir, site)
 
 def extract_labels(config: dict):
     dataset_config = config["dataset"]

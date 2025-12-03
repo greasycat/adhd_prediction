@@ -6,6 +6,7 @@ import numpy as np
 from pathlib import Path
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
 from pipeline import SubjectDataset
 from model.transformer import TransformerClassifierMultiToken
@@ -340,7 +341,12 @@ def merge_test_datasets_segments(test_datasets: list[SubjectDataset], n_segments
     y_test = np.concatenate(y_test, axis=0)
     return X_test, y_test
 
-def prepare_data(config: dict, use_rfe: bool, use_segments: bool = False, flatten: bool = True) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, int]:
+def prepare_data(
+    config: dict,
+    use_rfe: bool, use_segments: bool = False,
+    flatten: bool = True,
+    use_phenotypes: bool = True,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, int]:
     dataset_config = config["dataset"]
     image_dir = dataset_config.get("raw_dir", "data/raw")
     preprocessed_dir = dataset_config.get("preprocessed_dir", "data/processed")
@@ -376,9 +382,43 @@ def prepare_data(config: dict, use_rfe: bool, use_segments: bool = False, flatte
         y_train = np.array(nyu_dataset.get_labels(binary=True), dtype=np.float32)
         X_test, y_test = merge_test_datasets(test_datasets, flatten=flatten)
 
-    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42, stratify=y_train) # Split the NYU dataset into train and validation
+    # Optionally concatenate phenotype information (Gender, Age, FD, IQ, ...)
+    # Only supported for flattened feature representations.
+    if use_phenotypes and flatten:
+        # These column names must match those produced in `extract_label`
+        phenotype_columns = [
+            "Gender",
+            "Age",
+            "MeanFD",
+            "MaxFD",
+            "VerbalIQ",
+            "PerformanceIQ",
+        ]
+        X_train_pheno = nyu_dataset.get_phenotype_array(phenotype_columns)
+        X_test_pheno_list = [
+            ds.get_phenotype_array(phenotype_columns) for ds in test_datasets
+        ]
+        X_test_pheno = np.concatenate(X_test_pheno_list, axis=0)
 
+        # Concatenate along feature dimension
+        X_train = np.concatenate([X_train, X_train_pheno], axis=1)
+        X_test = np.concatenate([X_test, X_test_pheno], axis=1)
+
+    # Train / validation split on NYU (subject-level, stratified)
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_train,
+        y_train,
+        test_size=0.2,
+        random_state=42,
+        stratify=y_train,
+    )
+
+    # Feature scaling (fit on training split only to avoid data leakage)
     if flatten:
+        scaler = StandardScaler()
+        X_train = scaler.fit_transform(X_train)
+        X_val = scaler.transform(X_val)
+        X_test = scaler.transform(X_test)
         input_dim = X_train.shape[1] # type: ignore
     else:
         # expand dimensions to add channel dimension for 2D CNN
