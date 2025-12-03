@@ -44,10 +44,14 @@ use_batch_norm = true
 # Training configuration
 batch_size = 4
 learning_rate = 0.001
-num_epochs = 30
+num_epochs = 300
 weight_decay = 0.0001
 
 # Dataset splitting configuration
 val_split = 0.2  # Fraction of NYU dataset to use for validation
 random_state = 42  # Random seed for reproducible train/validation split
 
+[few_shot]
+k_shot = 5
+n_query = 15
+site_to_test = "NEURO"

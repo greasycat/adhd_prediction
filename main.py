@@ -5,6 +5,7 @@ from feature.fc import compute_fc
 from feature.rfe import rfe
 from model.classic_models import train_test_classics
 from pipeline.train_test_nn import train_test_nn
+from pipeline.few_shot import train_few_shot_model
 
 def build_menu(config: dict):
     return [
@@ -15,6 +16,7 @@ def build_menu(config: dict):
         ("Reduce Feature Elimination", lambda: rfe(config)),
         ("Train and test classic models", lambda: train_test_classics(config)),
         ("Train and test neural network models", lambda: train_test_nn(config)),
+        ("Train few-shot learning model", lambda: train_few_shot_model(config)),
     ]
 
 def display_menu(menu: list):

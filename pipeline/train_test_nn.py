@@ -23,14 +23,19 @@ class FCDataset(Dataset):
             X: Feature array of shape (n_samples, n_features)
             y: Labels array of shape (n_samples,)
         """
-        self.X = torch.FloatTensor(X)
-        self.y = torch.FloatTensor(y)
+        if isinstance(X, np.ndarray):
+            X = torch.FloatTensor(X)
+        if isinstance(y, np.ndarray):
+            y = torch.FloatTensor(y)
+
+        self.X = X
+        self.y = y
     
     def __len__(self):
         return len(self.X)
     
     def __getitem__(self, idx):
-        return self.X[idx], self.y[idx]
+        return self.X[idx], torch.clamp(self.y[idx], min=0, max=1)
 
 
 def train_epoch(model, dataloader, criterion, optimizer, device):
@@ -43,17 +48,27 @@ def train_epoch(model, dataloader, criterion, optimizer, device):
     for X, y in dataloader:
         X, y = X.to(device), y.to(device)
         # Ensure correct shape for 2D CNN model
-        if isinstance(model, SkipVoteNet):
-            if X.dim() == 3:  # (batch, H, W) -> (batch, 1, H, W)
-                X = X.unsqueeze(1)
-            elif X.dim() == 4 and X.shape[0] == 1 and X.shape[1] != 1:
-                # Handle rare case where shape became (1, batch, H, W)
-                X = X.squeeze(0).unsqueeze(1)
+        # if isinstance(model, SkipVoteNet):
+        #     if X.dim() == 3:  # (batch, H, W) -> (batch, 1, H, W)
+        #         X = X.unsqueeze(1)
+        #     elif X.dim() == 4 and X.shape[0] == 1 and X.shape[1] != 1:
+        #         # Handle rare case where shape became (1, batch, H, W)
+        #         X = X.squeeze(0).unsqueeze(1)
         
         # Forward pass
         optimizer.zero_grad()
-        outputs = model(X).squeeze()
+        outputs = model(X)
         loss = criterion(outputs, y)
+        if loss < 0:
+            print(loss)
+            print(X.shape)
+            print(y.shape)
+            print(outputs.shape)
+            print(loss)
+            print(X)
+            print(y)
+            print(outputs)
+            raise ValueError("Loss is negative")
         
         # Backward pass
         loss.backward()
@@ -78,6 +93,7 @@ def evaluate(model, dataloader, criterion, device):
     all_labels = []
     
     with torch.no_grad():
+
         for X, y in dataloader:
             X, y = X.to(device), y.to(device)
             
@@ -88,7 +104,7 @@ def evaluate(model, dataloader, criterion, device):
             #     elif X.dim() == 4 and X.shape[0] == 1 and X.shape[1] != 1:
             #         X = X.squeeze(0).unsqueeze(1)
             
-            outputs = model(X).squeeze()
+            outputs = model(X)
             loss = criterion(outputs, y)
             
             total_loss += loss.item()
@@ -145,19 +161,22 @@ def train_model(
         train_ds,
         batch_size=batch_size,
         shuffle=True,
-        num_workers=0
+        num_workers=0,
+        drop_last=True
     )
     val_loader = DataLoader(
         val_ds,
         batch_size=batch_size,
         shuffle=False,
-        num_workers=0
+        num_workers=0,
+        drop_last=True
     )
     test_loader = DataLoader(
         test_ds,
         batch_size=batch_size,
         shuffle=False,
-        num_workers=0
+        num_workers=0,
+        drop_last=True
     )
     
     # Initialize device
@@ -285,9 +304,9 @@ def get_available_models() -> list[tuple[str, str, dict[str, bool]]]:
         List of (model_name, description, config) tuples
     """
     return [
-        ("Transformer", "Transformer with multi-token attention", {"use_rfe": True, "flatten": True}),
-        ("ResNet", "Residual Network with fully-connected layers", {"use_rfe": False, "flatten": True}),
-        ("SkipVoteNet", "Skip Vote Net", {"use_rfe": False, "flatten": False}),
+        ("Transformer", "Transformer with multi-token attention", {"use_rfe": True, "flatten": True, "use_segments": False}),
+        ("ResNet", "Residual Network with fully-connected layers", {"use_rfe": False, "flatten": True, "use_segments": False}),
+        ("SkipVoteNet", "Skip Vote Net", {"use_rfe": False, "flatten": False, "use_segments": True}),
     ]
 
 
@@ -296,8 +315,8 @@ def display_model_menu(available_models: list[tuple[str, str, dict[str, bool]]])
     print("\n" + "-" * 60)
     print("Available Models:")
     print("-" * 60)
-    for i, (name, description, _) in enumerate(available_models, 1):
-        print(f"{i}) {name}: {description}")
+    for i, (name, description, config) in enumerate(available_models, 1):
+        print(f"{i}) {name}: {description} | use_rfe: {config['use_rfe']} | flatten: {config['flatten']} | use_segments: {config['use_segments']}")
     print(f"{len(available_models) + 1}) Quit")
     print("-" * 60)
 
@@ -309,7 +328,19 @@ def merge_test_datasets(test_datasets: list[SubjectDataset], selected_features =
         y_test.append(np.array(test_dataset.get_labels(binary=True), dtype=np.float32))
     return np.concatenate(X_test, axis=0), np.concatenate(y_test, axis=0)
 
-def prepare_data(config: dict, use_rfe: bool, flatten: bool = True) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, int]:
+def merge_test_datasets_segments(test_datasets: list[SubjectDataset], n_segments: int = 7):
+    X_test = []
+    y_test = []
+    for test_dataset in test_datasets:
+        X, y = test_dataset.get_fc_segments_and_labels(n_segments=n_segments)
+        print(X.shape)
+        X_test.append(X)
+        y_test.append(y)
+    X_test = np.concatenate(X_test, axis=0)
+    y_test = np.concatenate(y_test, axis=0)
+    return X_test, y_test
+
+def prepare_data(config: dict, use_rfe: bool, use_segments: bool = False, flatten: bool = True) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, int]:
     dataset_config = config["dataset"]
     image_dir = dataset_config.get("raw_dir", "data/raw")
     preprocessed_dir = dataset_config.get("preprocessed_dir", "data/processed")
@@ -337,6 +368,9 @@ def prepare_data(config: dict, use_rfe: bool, flatten: bool = True) -> tuple[np.
         X_train = nyu_dataset.get_fc_array(flatten=True, selected_features=selected_features_path)
         y_train = np.array(nyu_dataset.get_labels(binary=True), dtype=np.float32)
         X_test, y_test = merge_test_datasets(test_datasets, selected_features_path, flatten=True)
+    elif use_segments:
+        X_train, y_train = nyu_dataset.get_fc_segments_and_labels(n_segments=7)
+        X_test, y_test = merge_test_datasets_segments(test_datasets, n_segments=7)
     else: # If RFE is not used, use all features
         X_train = nyu_dataset.get_fc_array(flatten=flatten)
         y_train = np.array(nyu_dataset.get_labels(binary=True), dtype=np.float32)
@@ -352,6 +386,9 @@ def prepare_data(config: dict, use_rfe: bool, flatten: bool = True) -> tuple[np.
         X_val = np.expand_dims(X_val, axis=1)
         X_test = np.expand_dims(X_test, axis=1)
         input_dim = X_train.shape[2:] # type: ignore
+        y_train = np.expand_dims(y_train, axis=1)
+        y_val = np.expand_dims(y_val, axis=1)
+        y_test = np.expand_dims(y_test, axis=1)
 
     return X_train, X_val, X_test, y_train, y_val, y_test, input_dim # type: ignore
 
@@ -379,7 +416,7 @@ def train_test_nn(config: dict):
         
         model_name, _, model_config = available_models[choice_idx]
 
-        X_train, X_val, X_test, y_train, y_val, y_test, input_dim = prepare_data(config, use_rfe=model_config["use_rfe"], flatten=model_config["flatten"])
+        X_train, X_val, X_test, y_train, y_val, y_test, input_dim = prepare_data(config, use_rfe=model_config["use_rfe"], use_segments=model_config["use_segments"], flatten=model_config["flatten"])
 
         print(f"X_train shape: {X_train.shape}")
         print(f"X_val shape: {X_val.shape}")

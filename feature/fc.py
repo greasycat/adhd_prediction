@@ -10,6 +10,14 @@ from nilearn.datasets import fetch_atlas_aal
 from utils.label_extractor import SITES
 from pipeline.subject import SubjectDataset
 
+def split_ts(x, n_segments: int = 7):
+    t = x.shape[0]
+    segment_size = 2 * t // (n_segments + 1)
+    step = segment_size // 2  # 50% overlap
+
+    segments = [x[i*step : i*step + segment_size] for i in range(n_segments)]
+    return segments
+
 class FC:
     def __init__(self, config: dict):
 
@@ -28,7 +36,7 @@ class FC:
         for site, _ in SITES.items():
             self.datasets[site] = SubjectDataset(image_dir=self.raw_dir, label_path=self.processed_dir + f"/{site}_labels.csv", fc_dir=self.fc_dir)
 
-    def _compute_connectivity(self, img):
+    def _compute_connectivity(self, img, n_segments: int = 7):
         connectome_measure = ConnectivityMeasure(
             kind="correlation",
             standardize="zscore_sample", # type: ignore
@@ -43,13 +51,15 @@ class FC:
         )
 
         ts = masker.fit_transform(img)
-        connectome = connectome_measure.fit_transform([ts])
-        return connectome[0]
+        # split the ts into n_segments+1 segments and attach consecutive 2 to form n_segments
+        segments = split_ts(ts, n_segments)
+        connectome = connectome_measure.fit_transform(segments)
+        return np.squeeze(connectome)
     
-    def compute_all_connectivity(self, site: str):
+    def compute_all_connectivity(self, site: str, n_segments: int = 7):
         subject_dataset: SubjectDataset = self.datasets[site]
 
-        fc_dir = Path(self.processed_dir) / "fc"
+        fc_dir = Path(self.processed_dir) / "fc" / f"n_segments_{n_segments}"
         if not fc_dir.exists():
             fc_dir.mkdir(parents=True)
         
@@ -57,17 +67,15 @@ class FC:
 
         for id, img, _ in subject_dataset.enumerate_subjects():
             progress.update(1)
-            fc_path = fc_dir / f"{id}.npy"
 
             # if fc_path.exists():
             #     progress.set_description(f"Skipping {id} because it already exists")
             #     continue
-
             connectome = self._compute_connectivity(img)
-            np.fill_diagonal(connectome, 0)
-            # get upper triangular part
-            np.save(fc_path, connectome)
-            print(f"Shape of connectome: {connectome.shape}")
+            for i, c in enumerate(connectome):
+                fc_path = fc_dir / f"{id}_{i}.npy"
+                np.fill_diagonal(c, 0)
+                np.save(fc_path, c)
         
         progress.close()
 
@@ -76,6 +84,7 @@ def display_menu():
     for site, id in SITES.items():
         print(f"{id}) {site}")
     print("all) Compute FC for all sites")
+    print("1) Compute FC for NYU dataset with 7 segmentations")
     print("q) Quit")
     return input("Enter your choice: ")
     
@@ -86,6 +95,8 @@ def compute_fc(config: dict):
         choice = display_menu()
         if choice == "q":
             break
+        elif choice == "1":
+            fc.compute_all_connectivity("NYU", 7)
         elif choice == "all":
             for site in site_swap.keys():
                 fc.compute_all_connectivity(site_swap[int(site)])

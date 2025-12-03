@@ -67,6 +67,7 @@ def train_test_classics(config: dict):
     dataset_config = config["dataset"]
     image_dir = dataset_config.get("raw_dir", "data/raw")
     preprocessed_dir = dataset_config.get("preprocessed_dir", "data/processed")
+    fc_dir = preprocessed_dir + "/fc/full"
 
     feature_config = config["feature"]
     site_to_train = feature_config.get("site_to_train", "NYU")
@@ -75,14 +76,14 @@ def train_test_classics(config: dict):
     selected_features = preprocessed_dir + f"/{site_to_train}_feature_support.npy"
 
     # Train on NYU train set
-    NYU_dataset = SubjectDataset(image_dir=image_dir, label_path=preprocessed_dir + "/NYU_labels.csv", fc_dir=preprocessed_dir + "/fc")
+    NYU_dataset = SubjectDataset(image_dir=image_dir, label_path=preprocessed_dir + "/NYU_labels.csv", fc_dir=fc_dir)
     X_train, X_test, y_train, y_test = NYU_dataset.get_train_val_test_split(selected_features=selected_features)
     best_estimators = train_and_evaluate_model(X_train, y_train)
     # Test on NYU test set
     test_model(X_test, y_test, best_estimators, "NYU test set")
 
     # Test on NEURO test set
-    NEURO_dataset = SubjectDataset(image_dir=image_dir, label_path=preprocessed_dir + "/NEURO_labels.csv", fc_dir=preprocessed_dir + "/fc")
+    NEURO_dataset = SubjectDataset(image_dir=image_dir, label_path=preprocessed_dir + "/NEURO_labels.csv", fc_dir=fc_dir)
     X_train, X_test, y_train, y_test = NEURO_dataset.get_train_val_test_split(selected_features=selected_features)
     test_model(X_test, y_test, best_estimators, "NEURO test set")
 

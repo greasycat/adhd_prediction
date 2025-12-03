@@ -56,6 +56,15 @@ class SubjectDataset:
             raise FileNotFoundError(f"FC file not found, please run `uv run utils/feature_extract.py` to extract the FC: {fc_path}")
         return np.load(fc_path)
     
+    def get_fc_segments(self, id, n_segments: int = 7):
+        fc_segments = []
+        for i in range(n_segments):
+            fc_path = Path(self.fc_dir) / f"n_segments_{n_segments}" / f"{id}_{i}.npy"
+            if not fc_path.exists():
+                raise FileNotFoundError(f"FC file not found, please run `uv run utils/feature_extract.py` to extract the FC: {fc_path}")
+            fc_segments.append(np.load(fc_path, allow_pickle=True))
+        return fc_segments
+    
     def get_fc_array(self, flatten=False, selected_features=None):
         corr = np.stack([self.get_fc(id) for id in self.get_all_ids()])
 
@@ -71,6 +80,34 @@ class SubjectDataset:
                 corr = corr[:, selected_features]
         return corr
     
+    def get_fc_segments_and_labels(self, n_segments: int = 7, binary=True):
+        all_fc_segments = []
+        all_labels = []
+        for id in self.get_all_ids():
+            fc_segments = self.get_fc_segments(id, n_segments)
+            label = self.get_label(id) if not binary else 1 if self.get_label(id) > 0 else 0 # clip to 0 or 1
+            labels = [label] * n_segments
+            all_fc_segments.extend(fc_segments)
+            all_labels.extend(labels)
+        all_fc_segments = np.stack(all_fc_segments)
+        all_labels = np.array(all_labels)
+        return all_fc_segments, all_labels
+    
+    # For few-shot learning
+    # Get array of one random fc segments and label pair from each subject
+    def get_subject_random_fc_segments_and_labels(self, n_segments: int = 7, random_state=42):
+        X = []
+        y = []
+        # generate a random index for each subject
+        random_indices = np.random.RandomState(random_state).choice(n_segments, size=len(self.get_all_ids()))
+        for i, id in enumerate(self.get_all_ids()):
+            fc_segments = self.get_fc_segments(id, n_segments)
+            random_index = random_indices[i]
+            X.append(fc_segments[random_index])
+            y.append(self.get_label(id))
+        return np.array(X), np.array(y)
+
+    
     def get_train_val_test_split(self, selected_features=None, test_size=0.2, random_state=42):
         X = self.get_fc_array(flatten=True)
         y = np.array(self.get_labels(binary=True), dtype=np.float32)
@@ -83,6 +120,6 @@ class SubjectDataset:
     
 if __name__ == "__main__":
     subject = SubjectDataset(image_dir="data/raw", label_path="data/processed/NYU_labels.csv")
-    print(subject.get_mask_path("sub-0010001"))
-    print(subject.get_image_path("sub-0010001"))
-    print(subject.get_label("sub-0010001"))
+    fc_segments, labels = subject.get_fc_segments_and_labels(n_segments=7)
+    print(fc_segments.shape)
+    print(len(labels))
