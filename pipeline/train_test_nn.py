@@ -345,7 +345,7 @@ def prepare_data(
     config: dict,
     use_rfe: bool, use_segments: bool = False,
     flatten: bool = True,
-    use_phenotypes: bool = True,
+    use_phenotypes: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, int]:
     dataset_config = config["dataset"]
     image_dir = dataset_config.get("raw_dir", "data/raw")
