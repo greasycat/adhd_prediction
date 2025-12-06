@@ -6,6 +6,7 @@ from feature.rfe import rfe
 from model.classic_models import train_test_classics
 from pipeline.train_test_nn import train_test_nn
 from pipeline.few_shot import train_few_shot_model
+from pipeline.train_test_nn_joint import train_test_nn_joint
 
 def build_menu(config: dict):
     return [
@@ -17,6 +18,7 @@ def build_menu(config: dict):
         ("Train and test classic models", lambda: train_test_classics(config)),
         ("Train and test neural network models", lambda: train_test_nn(config)),
         ("Train few-shot learning model", lambda: train_few_shot_model(config)),
+        ("Train and test joint model", lambda: train_test_nn_joint(config)),
     ]
 
 def display_menu(menu: list):

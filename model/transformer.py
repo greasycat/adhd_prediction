@@ -39,7 +39,7 @@ class TransformerClassifier(nn.Module):
         num_layers: int = 3,
         dim_feedforward: int = 512,
         dropout: float = 0.1,
-        num_classes: int = 1,
+        num_classes: int = 2,
     ):
         """
         Args:
@@ -49,7 +49,7 @@ class TransformerClassifier(nn.Module):
             num_layers: Number of transformer encoder layers (default: 3)
             dim_feedforward: Dimension of feedforward network (default: 512)
             dropout: Dropout probability (default: 0.1)
-            num_classes: Number of output classes (1 for binary) (default: 1)
+            num_classes: Number of output classes (2 for binary) (default: 2)
         """
         super().__init__()
         
@@ -140,7 +140,7 @@ class TransformerClassifierMultiToken(nn.Module):
         num_layers: int = 3,
         dim_feedforward: int = 512,
         dropout: float = 0.1,
-        num_classes: int = 1,
+        num_classes: int = 2,
     ):
         """
         Args:
