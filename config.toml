@@ -24,6 +24,7 @@ plot_dir = "data/plots"
 
 rfe_n_features = 90
 site_to_train = "NYU" # Available sites: NEURO, NYU, OHSU, 
+fc_variant = "fc90" # Options: "fc90" (90 ROIs, unsegmented) | "full" (full AAL, segmented)
 
 [model]
 # Common model configuration
@@ -44,7 +45,7 @@ use_batch_norm = true
 # Training configuration
 batch_size = 4
 learning_rate = 0.001
-num_epochs = 300
+num_epochs = 50
 weight_decay = 0.0001
 
 # Dataset splitting configuration

@@ -18,7 +18,7 @@ def split_ts(x, n_segments: int = 7):
     segments = [x[i*step : i*step + segment_size] for i in range(n_segments)]
     return segments
 
-class FC:
+class FCFull:
     def __init__(self, config: dict):
 
         self.dataset_config = config["dataset"]
@@ -80,7 +80,7 @@ class FC:
         progress.close()
 
 def display_menu():
-    print("-"*10 + "FC MENU" + "-"*10)
+    print("-"*10 + "Full FC MENU" + "-"*10)
     for site, id in SITES.items():
         print(f"{id}) {site}")
     print("all) Compute FC for all sites")
@@ -89,7 +89,7 @@ def display_menu():
     return input("Enter your choice: ")
     
 def compute_fc(config: dict):
-    fc = FC(config)
+    fc = FCFull(config)
     site_swap = dict(zip(SITES.values(), SITES.keys()))
     while True:
         choice = display_menu()
