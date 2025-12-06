@@ -1,19 +1,38 @@
 import tomllib
 import sys
+import importlib
 from utils import download_dataset, extract_labels
-from feature.fc import compute_fc
 from feature.rfe import rfe
 from model.classic_models import train_test_classics
 from pipeline.train_test_nn import train_test_nn
 from pipeline.few_shot import train_few_shot_model
 from pipeline.train_test_nn_joint import train_test_nn_joint
 
+def run_compute_fc(config: dict):
+    feature_cfg = config.get("feature", {})
+    default_variant = str(feature_cfg.get("fc_variant", "fc90")).lower()
+    print("\n" + "-" * 40)
+    print("Select FC variant to compute:")
+    print("1) FC90 (AAL90, 90 ROIs, unsegmented)")
+    print("2) 167 AAL (segmented)")
+    print("Enter to use default:", default_variant)
+    print("-" * 40)
+    choice = input("Choice [1/2/default]: ").strip().lower()
+    if choice in ("1", "fc90", "aal90", "90"):
+        module_name = "feature.fc_90"
+    elif choice in ("2", "full", "aal", "all", "full_aal"):
+        module_name = "feature.fc"
+    else:
+        module_name = "feature.fc_90" if default_variant in ("fc90", "aal90", "90") else "feature.fc"
+    compute_fc = importlib.import_module(module_name).compute_fc
+    return compute_fc(config)
+
 def build_menu(config: dict):
     return [
         ("Browse the dataset", lambda: download_dataset(config, interactive=True)),
         ("Download the dataset", lambda: download_dataset(config)),
         ("Extract & visualize labels", lambda: extract_labels(config)),
-        ("Compute FC", lambda: compute_fc(config)),
+        ("Compute FC", lambda: run_compute_fc(config)),
         ("Reduce Feature Elimination", lambda: rfe(config)),
         ("Train and test classic models", lambda: train_test_classics(config)),
         ("Train and test neural network models", lambda: train_test_nn(config)),
