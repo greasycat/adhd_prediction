@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
+import pandas as pd
 import numpy as np
 from pathlib import Path
 from sklearn.metrics import accuracy_score, classification_report
@@ -25,9 +26,9 @@ class FCDataset(Dataset):
             y: Labels array of shape (n_samples,)
         """
         if isinstance(X, np.ndarray):
-            X = torch.FloatTensor(X)
+            X = torch.FloatTensor(X) # type: ignore
         if isinstance(y, np.ndarray):
-            y = torch.FloatTensor(y)
+            y = torch.LongTensor(y) # type: ignore
 
         self.X = X
         self.y = y
@@ -36,7 +37,7 @@ class FCDataset(Dataset):
         return len(self.X)
     
     def __getitem__(self, idx):
-        return self.X[idx], torch.clamp(self.y[idx], min=0, max=1)
+        return self.X[idx], torch.clamp(self.y[idx], min=0, max=1) # type: ignore
 
 
 def train_epoch(model, dataloader, criterion, optimizer, device):
@@ -48,36 +49,19 @@ def train_epoch(model, dataloader, criterion, optimizer, device):
     
     for X, y in dataloader:
         X, y = X.to(device), y.to(device)
-        # Ensure correct shape for 2D CNN model
-        # if isinstance(model, SkipVoteNet):
-        #     if X.dim() == 3:  # (batch, H, W) -> (batch, 1, H, W)
-        #         X = X.unsqueeze(1)
-        #     elif X.dim() == 4 and X.shape[0] == 1 and X.shape[1] != 1:
-        #         # Handle rare case where shape became (1, batch, H, W)
-        #         X = X.squeeze(0).unsqueeze(1)
+
         
         # Forward pass
         optimizer.zero_grad()
         outputs = model(X)
         loss = criterion(outputs, y)
-        if loss < 0:
-            print(loss)
-            print(X.shape)
-            print(y.shape)
-            print(outputs.shape)
-            print(loss)
-            print(X)
-            print(y)
-            print(outputs)
-            raise ValueError("Loss is negative")
-        
         # Backward pass
         loss.backward()
         optimizer.step()
         
         # Statistics
         total_loss += loss.item()
-        predictions = (torch.sigmoid(outputs) > 0.5).float()
+        predictions = torch.argmax(outputs, dim=1)
         correct += (predictions == y).sum().item()
         total += y.size(0)
     
@@ -97,20 +81,11 @@ def evaluate(model, dataloader, criterion, device):
 
         for X, y in dataloader:
             X, y = X.to(device), y.to(device)
-            
-            # # Ensure correct shape for 2D CNN model
-            # if isinstance(model, SkipVoteNet):
-            #     if X.dim() == 3:  # (batch, H, W) -> (batch, 1, H, W)
-            #         X = X.unsqueeze(1)
-            #     elif X.dim() == 4 and X.shape[0] == 1 and X.shape[1] != 1:
-            #         X = X.squeeze(0).unsqueeze(1)
-            
             outputs = model(X)
             loss = criterion(outputs, y)
             
             total_loss += loss.item()
-            predictions = (torch.sigmoid(outputs) > 0.5).float()
-            
+            predictions = torch.argmax(outputs, dim=1)
             all_predictions.extend(predictions.cpu().numpy())
             all_labels.extend(y.cpu().numpy())
     
@@ -152,6 +127,9 @@ def train_model(
     learning_rate = training_config.get("learning_rate", 0.001)
     num_epochs = training_config.get("num_epochs", 100)
     weight_decay = training_config.get("weight_decay", 0.0001)
+    log_dir = training_config.get("log_dir", "logs")
+    if not Path(log_dir).exists():
+        Path(log_dir).mkdir(parents=True, exist_ok=True)
     
     # Create datasets and dataloaders
     train_ds = FCDataset(X_train, y_train)
@@ -185,7 +163,7 @@ def train_model(
     model = model.to(device)
     
     # Loss and optimizer
-    criterion = nn.BCEWithLogitsLoss()
+    criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(
         model.parameters(),
         lr=learning_rate,
@@ -207,6 +185,13 @@ def train_model(
     
     print(f"\nTraining {model_name}...")
     print(f"Train set: {len(X_train)} samples | Validation set: {len(X_val)} samples | Test set: {len(X_test)} samples")
+
+    history = {
+        'train_loss': [],
+        'train_acc': [],
+        'val_loss': [],
+        'val_acc': [],
+    }
     
     for epoch in range(num_epochs):
         # Train
@@ -214,7 +199,7 @@ def train_model(
         
         # Evaluate on validation set
         val_loss, val_acc, _, _ = evaluate(model, val_loader, criterion, device)
-        
+
         # Update learning rate based on validation loss
         scheduler.step(val_loss)
         current_lr = optimizer.param_groups[0]['lr']
@@ -237,7 +222,14 @@ def train_model(
         # Print progress every epoch
         print(f"Epoch {epoch + 1}/{num_epochs}: Train Loss={train_loss:.4f} Acc={train_acc:.4f} | "
               f"Val Loss={val_loss:.4f} Acc={val_acc:.4f} | Best Val={best_val_acc:.4f}@{best_epoch}")
+        history['train_loss'].append(train_loss)   
+        history['train_acc'].append(train_acc)
+        history['val_loss'].append(val_loss)
+        history['val_acc'].append(val_acc)
     
+    # save history to csv
+    pd.DataFrame(history).to_csv(f"{log_dir}/{model_name}_history.csv", index=False)
+
     # Load best model for final evaluation on test set
     print("\nEvaluating on test set..")
     checkpoint = torch.load(model_save_path)
@@ -277,7 +269,7 @@ def create_model(model_name: str, input_dim: int, config: dict) -> nn.Module:
             num_layers=num_layers,
             dim_feedforward=dim_feedforward,
             dropout=dropout,
-            num_classes=1
+            num_classes=2
         )
     
     elif model_name == "ResNet":
@@ -289,7 +281,7 @@ def create_model(model_name: str, input_dim: int, config: dict) -> nn.Module:
             hidden_dims=hidden_dims,
             dropout=dropout,
             use_batch_norm=use_batch_norm,
-            num_classes=1
+            num_classes=2
         )
     
     elif model_name == "SkipVoteNet":
@@ -306,7 +298,7 @@ def get_available_models() -> list[tuple[str, str, dict[str, bool]]]:
     """
     return [
         ("Transformer", "Transformer with multi-token attention", {"use_rfe": True, "flatten": True, "use_segments": False}),
-        ("ResNet", "Residual Network with fully-connected layers", {"use_rfe": False, "flatten": True, "use_segments": False}),
+        ("ResNet", "Residual Network with fully-connected layers", {"use_rfe": True, "flatten": True, "use_segments": False}),
         ("SkipVoteNet", "Skip Vote Net", {"use_rfe": False, "flatten": False, "use_segments": True}),
     ]
 
@@ -426,9 +418,9 @@ def prepare_data(
         X_val = np.expand_dims(X_val, axis=1)
         X_test = np.expand_dims(X_test, axis=1)
         input_dim = X_train.shape[2:] # type: ignore
-        y_train = np.expand_dims(y_train, axis=1)
-        y_val = np.expand_dims(y_val, axis=1)
-        y_test = np.expand_dims(y_test, axis=1)
+        # y_train = np.expand_dims(y_train, axis=1)
+        # y_val = np.expand_dims(y_val, axis=1)
+        # y_test = np.expand_dims(y_test, axis=1)
 
     return X_train, X_val, X_test, y_train, y_val, y_test, input_dim # type: ignore
 

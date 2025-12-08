@@ -64,7 +64,7 @@ class SubjectDataset:
             yield id, self.get_image_path(id), self.get_mask_path(id)
     
     def get_fc(self, id):
-        fc_path = Path(self.fc_dir) / f"{id}.npy"
+        fc_path = Path(self.fc_dir) / "full" / f"{id}.npy"
         if not fc_path.exists():
             raise FileNotFoundError(f"FC file not found, please run `uv run utils/feature_extract.py` to extract the FC: {fc_path}")
         return np.load(fc_path)

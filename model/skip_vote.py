@@ -52,7 +52,7 @@ class SkipVoteNet(nn.Module):
             ))
         
         # Output layer
-        self.fc_layers.append(nn.Linear(fc_dims[-1], 1))
+        self.fc_layers.append(nn.Linear(fc_dims[-1], 2))
     
     def forward(self, x):
         # Path 1
