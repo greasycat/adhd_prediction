@@ -1,3 +1,7 @@
+# Author: R Jin, Y Yu
+# Last Modified Date: 2025-12-11
+# Description: This file contains the code for the SubjectDataset class, which is used to load the data from the dataset, including the FC, labels, and phenotypes.
+
 from pathlib import Path
 from sklearn.model_selection import train_test_split, StratifiedKFold
 import pandas as pd
@@ -31,6 +35,7 @@ class SubjectDataset:
             raise FileNotFoundError(f"Image file not found: {path}")
         return path
     
+    # Get the label of a subject, if binary is True, return 1 if the label is greater than 0, otherwise return the label
     def get_label(self, id, binary=False):
         label = self.label_df[self.label_df["id"] == id]["label"].values[0] # type: ignore
         if binary:
@@ -81,6 +86,7 @@ class SubjectDataset:
             fc_segments.append(np.load(fc_path, allow_pickle=True))
         return fc_segments
     
+    # Get the FC array of all subjects, if flatten is True, return the upper triangular part of the correlation array, otherwise return the correlation array
     def get_fc_array(self, flatten=False, selected_features=None):
         corr = np.stack([self.get_fc(id) for id in self.get_all_ids()])
 
@@ -96,6 +102,7 @@ class SubjectDataset:
                 corr = corr[:, selected_features]
         return corr
     
+    # Get the FC segments and labels of all subjects, if with_id is True, return the FC segments, labels, and ids, otherwise return the FC segments and labels
     def get_fc_segments_and_labels(self, n_segments: int = 7, binary=True, with_id=False, batch_dim=True):
         all_fc_segments = []
         all_labels = []
@@ -118,11 +125,13 @@ class SubjectDataset:
         else:
             return all_fc_segments, all_labels
     
+    # Get the stratified ids of the dataset, return the train and test ids
     def get_stratifed_ids(self):
         ids = self.get_all_ids()
         labels = np.array(self.get_labels(binary=True))
         return train_test_split(ids, labels, test_size=0.2, random_state=42, stratify=labels)
     
+    # Get the FC segments and labels of a list of ids, if binary is True, return the labels as 1 or 0, otherwise return the labels as the original values
     def get_fc_segments_and_labels_by_ids(self, ids, n_segments: int = 7, binary=True):
         X = []
         y = []
@@ -135,21 +144,6 @@ class SubjectDataset:
         X = np.expand_dims(X, axis=1)
         y = np.concatenate(y, axis=0)
         return X, y
-    
-    # For few-shot learning
-    # Get array of one random fc segments and label pair from each subject
-    def get_subject_random_fc_segments_and_labels(self, n_segments: int = 7, random_state=42):
-        X = []
-        y = []
-        # generate a random index for each subject
-        random_indices = np.random.RandomState(random_state).choice(n_segments, size=len(self.get_all_ids()))
-        for i, id in enumerate(self.get_all_ids()):
-            fc_segments = self.get_fc_segments(id, n_segments)
-            random_index = random_indices[i]
-            X.append(fc_segments[random_index])
-            y.append(self.get_label(id))
-        return np.array(X), np.array(y)
-
     
     def get_train_val_test_split(self, selected_features=None, test_size=0.2, random_state=42, flatten=True) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         X = self.get_fc_array(flatten=flatten)

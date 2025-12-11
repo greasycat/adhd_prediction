@@ -14,14 +14,24 @@ You can select a list of operation to perform
 uv run main.py
 ```
 
-## View and Prepare the dataset
-The dataset is hosted on an public AWS S3 bucket by ADHD200 team
+The following table explain functionality of each option
+| Option | Description | Notes |
+|--------|-------------|-------|
+| 1 | Download the dataset | |
+| 2 | Extract & visualize labels | |
+| 3 | Compute FC | |
+| 4 | Reduce Feature Elimination | Not reported in the paper |
+| 5 | Train and test classic models | Not reported in the paper |
+| 6 | Train and test neural network models | Not reported in the paper |
+| 7 | Train and test joint model | |
+| 8 | Test on new sites | |
+| 9 | Run ablation study | |
+| q | Quit | |
 
-You can interactive choose to view and download the image files and phenotypes
-
-| Option Index | Functionality |
-| - | - |
-| 0 | S3 Bucket Broswer (View-only) |
-
-
-
+A recommended sequence of option to reproduce the results is as follows:
+- (1): Download all labels and data
+- (2): Extract cleaned label from the raw data
+- (3): Choose 167 AAL and Compute FC for NYU dataset with 7 segmentation
+- (7): Train and test the AECLS model (Reconstruction loss + Classification Loss)
+- (8): Test AECLS model on new site (All other sites except NYU)
+- (9): Train and test CLS model (No reconstruction loss)

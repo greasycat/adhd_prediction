@@ -1,3 +1,8 @@
+# Author: R Jin, Y Yu
+# Last Modified Date: 2025-12-11
+# Description: This file contains the code for computing the FC for the full AAL atlas.
+
+
 from pathlib import Path
 from tqdm import tqdm
 import numpy as np
@@ -10,6 +15,7 @@ from nilearn.datasets import fetch_atlas_aal
 from utils.label_extractor import SITES
 from pipeline.subject import SubjectDataset
 
+# Split the time series into n_segments segments with 50% overlap
 def split_ts(x, n_segments: int = 7):
     t = x.shape[0]
     segment_size = 2 * t // (n_segments + 1)
@@ -18,6 +24,7 @@ def split_ts(x, n_segments: int = 7):
     segments = [x[i*step : i*step + segment_size] for i in range(n_segments)]
     return segments
 
+# Compute the FC for the full AAL atlas
 class FCFull:
     def __init__(self, config: dict):
 
@@ -36,6 +43,7 @@ class FCFull:
         for site, _ in SITES.items():
             self.datasets[site] = SubjectDataset(image_dir=self.raw_dir, label_path=self.processed_dir + f"/{site}_labels.csv", fc_dir=self.fc_dir)
 
+    # Compute the FC for the full AAL atlas
     def _compute_connectivity(self, img, n_segments: int = 7):
         connectome_measure = ConnectivityMeasure(
             kind="correlation",
@@ -68,9 +76,6 @@ class FCFull:
         for id, img, _ in subject_dataset.enumerate_subjects():
             progress.update(1)
 
-            # if fc_path.exists():
-            #     progress.set_description(f"Skipping {id} because it already exists")
-            #     continue
             connectome = self._compute_connectivity(img)
             for i, c in enumerate(connectome):
                 fc_path = fc_dir / f"{id}_{i}.npy"

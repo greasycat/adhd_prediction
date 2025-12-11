@@ -1,4 +1,6 @@
-# Reduce Feature Elimination with SVM
+# Author: R Jin, Y Yu
+# Last Modified Date: 2025-12-11
+# Description: This file contains the code for reducing the features using SVM RFE.
 import numpy as np
 from sklearn.feature_selection import RFE
 from sklearn.svm import SVC
@@ -6,6 +8,7 @@ from sklearn.model_selection import train_test_split
 
 from pipeline.subject import SubjectDataset
 
+# Reduce Feature Elimination with SVM
 def svm_rfe(X, y, n_features=90):
     svc = SVC(kernel="linear")
     selector = RFE(estimator=svc, n_features_to_select=n_features, step=1)

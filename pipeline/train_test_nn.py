@@ -1,3 +1,7 @@
+# Author: R Jin, Y Yu
+# Last Modified Date: 2025-12-11
+# Description: This file contains the code for training and testing the neural network models (Other than AECLSNet).
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -18,11 +22,6 @@ class FCDataset(Dataset):
     """PyTorch Dataset for Functional Connectivity data."""
     
     def __init__(self, X: np.ndarray, y: np.ndarray):
-        """
-        Args:
-            X: Feature array of shape (n_samples, n_features)
-            y: Labels array of shape (n_samples,)
-        """
         if isinstance(X, np.ndarray):
             X = torch.FloatTensor(X) # type: ignore
         if isinstance(y, np.ndarray):
@@ -108,20 +107,6 @@ def train_model(
     config: dict,
     model_save_path: str
 ):
-    """Train any neural network model on NYU train set, validate on NYU validation set, and test on NEURO.
-    
-    Args:
-        model: PyTorch model to train
-        model_name: Name of the model for display
-        X_train: Training features (NYU split)
-        y_train: Training labels (NYU split)
-        X_val: Validation features (NYU split)
-        y_val: Validation labels (NYU split)
-        X_test: Test features (NEURO)
-        y_test: Test labels (NEURO)
-        config: Configuration dictionary
-        model_save_path: Path to save the trained model
-    """
     # Training config
     training_config = config.get("training", {})
     batch_size = training_config.get("batch_size", 32)

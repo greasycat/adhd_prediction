@@ -25,20 +25,14 @@ plot_dir = "data/plots"
 rfe_n_features = 90
 site_to_train = "NYU" # Available sites: NEURO, NYU, OHSU, 
 fc_variant = "fc90" # Options: "fc90" (90 ROIs, unsegmented) | "full" (full AAL, segmented)
+regions_to_remove = [115] # Regions to remove from the FC data
 
-[model]
+[model] # (Not used in the AECLS cross-validation setup)
 # Common model configuration
 input_dim = 90
 dropout = 0.1
 
-# Transformer model configuration
-d_model = 128
-nhead = 8
-num_layers = 3
-dim_feedforward = 512
-
-[training]
-# Training configuration
+[training] # (Not used in the AECLS cross-validation setup)
 batch_size = 4
 learning_rate = 0.0001
 num_epochs = 100

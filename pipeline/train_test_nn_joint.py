@@ -1,3 +1,6 @@
+# Author: R Jin, Y Yu
+# Last Modified Date: 2025-12-11
+# Description: This file contains the code for training and testing the joint model (AECLSNet).
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -14,6 +17,7 @@ from pipeline import SubjectDataset
 from utils.label_extractor import SITES
 
 
+# Train and test the joint model (AECLSNet)
 def train_test_nn_joint(config: dict):
     metrics = {
         "val_accuracy": [],
@@ -47,10 +51,12 @@ def train_test_nn_joint(config: dict):
     print(metrics_df.describe())
     return metrics_df
 
+# Test on new sites for the joint model (AECLSNet)
 def train_test_nn_joint_new_sites(config: dict):
     test_on_new_sites(config)
     return
 
+# Ablation study for the joint model (AECLSNet without reconstruction loss)
 def train_test_nn_joint_ablation_study(config: dict):
     ablation_study(config)
     return
@@ -114,12 +120,12 @@ def test_on_new_sites(config: dict):
     print(metrics_df.describe())
     return metrics_df
 
+# Prepare the data for training and testing the joint model (AECLSNet)
 def prepare_data(config: dict):
     dataset_config = config["dataset"]
     image_dir = dataset_config.get("raw_dir", "data/raw")
     preprocessed_dir = dataset_config.get("preprocessed_dir", "data/processed")
     site_to_train = config["feature"].get("site_to_train", "NYU")
-
     regions_to_remove = config["feature"].get("regions_to_remove", [115])
 
     nyu_dataset = SubjectDataset(
@@ -178,10 +184,6 @@ def prepare_testing_datasets(config: dict) -> tuple[np.ndarray, np.ndarray]:
 
     return X_test, y_test
 
-def prepare_finetune_data(X_test, y_test):
-    X_train, X_val, y_train, y_val = train_test_split(X_test, y_test, test_size=0.8, random_state=42, stratify=y_test)
-    return X_train, X_val, y_train, y_val
-
 def train_model(
     model: nn.Module,
     model_name: str,
@@ -195,18 +197,6 @@ def train_model(
     alpha: float = 0.3,
     verbose: bool = False
 ):
-    """Train any neural network model on NYU train set, validate on NYU validation set, and test on NEURO.
-    
-    Args:
-        model: PyTorch model to train
-        model_name: Name of the model for display
-        X_train: Training features (NYU split)
-        y_train: Training labels (NYU split)
-        X_val: Validation features (NYU split)
-        y_val: Validation labels (NYU split)
-        config: Configuration dictionary
-        model_save_path: Path to save the trained model
-    """
     # Training config
     training_config = config.get("training", {})
     batch_size = training_config.get("batch_size", 32)
