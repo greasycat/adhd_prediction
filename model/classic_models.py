@@ -1,5 +1,10 @@
+# Author: R Jin, Y Yu
+# Last Modified Date: 2025-12-11
+# Description: This file contains the code for training and evaluating classic models. 
+# We did not report the results of classic models in the paper.
+
 import numpy as np
-from sklearn.model_selection import cross_validate, train_test_split
+from sklearn.model_selection import cross_validate
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier

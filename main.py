@@ -5,8 +5,7 @@ from utils import download_dataset, extract_labels
 from feature.rfe import rfe
 from model.classic_models import train_test_classics
 from pipeline.train_test_nn import train_test_nn
-from pipeline.few_shot import train_few_shot_model
-from pipeline.train_test_nn_joint import train_test_nn_joint
+from pipeline.train_test_nn_joint import ablation_study, test_on_new_sites, train_test_nn_joint
 
 def run_compute_fc(config: dict):
     feature_cfg = config.get("feature", {})
@@ -33,11 +32,12 @@ def build_menu(config: dict):
         ("Download the dataset", lambda: download_dataset(config)),
         ("Extract & visualize labels", lambda: extract_labels(config)),
         ("Compute FC", lambda: run_compute_fc(config)),
-        ("Reduce Feature Elimination", lambda: rfe(config)),
-        ("Train and test classic models", lambda: train_test_classics(config)),
-        ("Train and test neural network models", lambda: train_test_nn(config)),
-        ("Train few-shot learning model", lambda: train_few_shot_model(config)),
+        ("Reduce Feature Elimination (Not reported in the paper)", lambda: rfe(config)),
+        ("Train and test classic models (Not reported in the paper)", lambda: train_test_classics(config)),
+        ("Train and test neural network models (Not reported in the paper)", lambda: train_test_nn(config)),
         ("Train and test joint model", lambda: train_test_nn_joint(config)),
+        ("Test on new sites", lambda: test_on_new_sites(config)),
+        ("Run ablation study", lambda: ablation_study(config)),
     ]
 
 def display_menu(menu: list):

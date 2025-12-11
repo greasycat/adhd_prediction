@@ -10,9 +10,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 from pipeline import SubjectDataset
-from model.transformer import TransformerClassifierMultiToken
-from model.resnet import ResNetClassifier
-from model.skip_vote import SkipVoteNet
+from model.aecls import CLSNet
 from utils.label_extractor import SITES
 
 
@@ -32,12 +30,15 @@ class FCDataset(Dataset):
 
         self.X = X
         self.y = y
+
+        if len(self.X) != len(self.y):
+            raise ValueError(f"X and y must have the same length. X: {len(self.X)}, y: {len(self.y)}")
     
     def __len__(self):
         return len(self.X)
     
     def __getitem__(self, idx):
-        return self.X[idx], torch.clamp(self.y[idx], min=0, max=1) # type: ignore
+        return self.X[idx], self.y[idx]
 
 
 def train_epoch(model, dataloader, criterion, optimizer, device):
@@ -253,39 +254,9 @@ def create_model(model_name: str, input_dim: int, config: dict) -> nn.Module:
     Returns:
         PyTorch model instance
     """
-    model_config = config.get("model", {})
-    dropout = model_config.get("dropout", 0.1)
     
-    if model_name == "Transformer":
-        d_model = model_config.get("d_model", 128)
-        nhead = model_config.get("nhead", 8)
-        num_layers = model_config.get("num_layers", 3)
-        dim_feedforward = model_config.get("dim_feedforward", 512)
-        
-        return TransformerClassifierMultiToken(
-            input_dim=input_dim,
-            d_model=d_model,
-            nhead=nhead,
-            num_layers=num_layers,
-            dim_feedforward=dim_feedforward,
-            dropout=dropout,
-            num_classes=2
-        )
-    
-    elif model_name == "ResNet":
-        hidden_dims = model_config.get("hidden_dims", [256, 128, 64])
-        use_batch_norm = model_config.get("use_batch_norm", True)
-        
-        return ResNetClassifier(
-            input_dim=input_dim,
-            hidden_dims=hidden_dims,
-            dropout=dropout,
-            use_batch_norm=use_batch_norm,
-            num_classes=2
-        )
-    
-    elif model_name == "SkipVoteNet":
-        return SkipVoteNet()
+    if model_name == "CLSNet":
+        return CLSNet()
     else:
         raise ValueError(f"Unknown model: {model_name}")
 
@@ -297,9 +268,7 @@ def get_available_models() -> list[tuple[str, str, dict[str, bool]]]:
         List of (model_name, description, config) tuples
     """
     return [
-        ("Transformer", "Transformer with multi-token attention", {"use_rfe": True, "flatten": True, "use_segments": False}),
-        ("ResNet", "Residual Network with fully-connected layers", {"use_rfe": True, "flatten": True, "use_segments": False}),
-        ("SkipVoteNet", "Skip Vote Net", {"use_rfe": False, "flatten": False, "use_segments": True}),
+        ("CLSNet", "CLSNet", {"use_rfe": False, "flatten": False, "use_segments": True}),
     ]
 
 
@@ -325,7 +294,7 @@ def merge_test_datasets_segments(test_datasets: list[SubjectDataset], n_segments
     X_test = []
     y_test = []
     for test_dataset in test_datasets:
-        X, y = test_dataset.get_fc_segments_and_labels(n_segments=n_segments)
+        X, y = test_dataset.get_fc_segments_and_labels(n_segments=n_segments) # type: ignore
         print(X.shape)
         X_test.append(X)
         y_test.append(y)
@@ -338,6 +307,7 @@ def prepare_data(
     use_rfe: bool, use_segments: bool = False,
     flatten: bool = True,
     use_phenotypes: bool = False,
+    regions_to_remove: list[int] = [115],
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, int]:
     dataset_config = config["dataset"]
     image_dir = dataset_config.get("raw_dir", "data/raw")
@@ -367,12 +337,13 @@ def prepare_data(
         y_train = np.array(nyu_dataset.get_labels(binary=True), dtype=np.float32)
         X_test, y_test = merge_test_datasets(test_datasets, selected_features_path, flatten=True)
     elif use_segments:
-        X_train, y_train = nyu_dataset.get_fc_segments_and_labels(n_segments=7)
+        X_train, y_train = nyu_dataset.get_fc_segments_and_labels(n_segments=7) # type: ignore
         X_test, y_test = merge_test_datasets_segments(test_datasets, n_segments=7)
     else: # If RFE is not used, use all features
         X_train = nyu_dataset.get_fc_array(flatten=flatten)
         y_train = np.array(nyu_dataset.get_labels(binary=True), dtype=np.float32)
         X_test, y_test = merge_test_datasets(test_datasets, flatten=flatten)
+
 
     # Optionally concatenate phenotype information (Gender, Age, FD, IQ, ...)
     # Only supported for flattened feature representations.
@@ -418,9 +389,6 @@ def prepare_data(
         X_val = np.expand_dims(X_val, axis=1)
         X_test = np.expand_dims(X_test, axis=1)
         input_dim = X_train.shape[2:] # type: ignore
-        # y_train = np.expand_dims(y_train, axis=1)
-        # y_val = np.expand_dims(y_val, axis=1)
-        # y_test = np.expand_dims(y_test, axis=1)
 
     return X_train, X_val, X_test, y_train, y_val, y_test, input_dim # type: ignore
 

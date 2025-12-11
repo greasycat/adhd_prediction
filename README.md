@@ -19,5 +19,9 @@ The dataset is hosted on an public AWS S3 bucket by ADHD200 team
 
 You can interactive choose to view and download the image files and phenotypes
 
-# Extract functional connectivity correlation matrix
+| Option Index | Functionality |
+| - | - |
+| 0 | S3 Bucket Broswer (View-only) |
+
+
 
